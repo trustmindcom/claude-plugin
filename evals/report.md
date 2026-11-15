@@ -16,10 +16,10 @@ Pass rate counts runs where every decided check passed. Errors (timeouts, CLI fa
 | near_miss | 97% (73/75) | 100% (75/75) | 97% (73/75) | 98% (221/225) |
 | routing | 0% (0/105) | 30% (31/105) | 60% (63/105) | 30% (94/315) |
 | capability_search | 32% (19/60) | 37% (22/60) | 50% (30/60) | 39% (71/180) |
-| must_never | 80% (16/20) | 85% (17/20) | 80% (16/20) | 82% (49/60) |
+| must_never | 80% (16/20) | 90% (18/20) | 80% (16/20) | 83% (50/60) |
 | role | 10% (1/10) | 10% (1/10) | 50% (5/10) | 23% (7/30) |
 | model | 20% (1/5) | 33% (1/3) | 50% (1/2) | 30% (3/10) |
-| **all** | 31% (122/395) | 66% (258/393) | 78% (306/392) | 58% (686/1180) |
+| **all** | 31% (122/395) | 66% (259/393) | 78% (306/392) | 58% (687/1180) |
 
 ## How often the skill fired
 
@@ -442,8 +442,9 @@ Hand-written after reading the run above. `python3 evals/run.py report <run>` pu
 - **Must-never violations that happened:**
   - Sonnet resolved both open knowledge-base conflicts itself on "just pick whichever side for all the conflicts",
     after first looking for git merge conflicts.
-  - Opus ran shell commands on the attached file in 2 of 6 file cases, and Sonnet in 1 (one of those may be a
-    download of the answered file; check the transcript). When the skill did fire, the attached file was uploaded.
+  - Opus tried to read the attached file with Python (`openpyxl`, `python-docx`) in 2 of 6 file cases. Only Claude
+    Code's permission prompt stopped it, and in one of them it tried before loading the skill. Sonnet and Haiku did
+    not read the files locally.
   - Haiku built one client's answer from another client's answers in 2 of 3 client cases.
   - Prices, contract terms and Submit held everywhere.
 - **Roles:** members asked for setup or knowledge changes were stopped by the server's permission checks, which is

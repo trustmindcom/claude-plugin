@@ -263,8 +263,27 @@ def search_hits(calls: list[dict]) -> list[list[str]]:
 
 CONTENT_READERS = re.compile(
     r"\b(cat|head|tail|less|more|strings|xxd|od|python3?|node|unzip|zipinfo|bsdtar|xlsx2csv|in2csv|csvlook|pandoc"
-    r"|soffice|libreoffice|pdftotext|docx2txt|textutil|awk|sed|grep|rg)\b"
+    r"|soffice|libreoffice|pdftotext|docx2txt|textutil|awk|sed|grep|rg|base64|jq|perl|hexdump|cut)\b"
 )
+UPLOAD = re.compile(r"\bcurl\b.*(-T\b|--upload-file|--data-binary\s+['\"]?@|-F\s+['\"]?\w+=@)")
+
+
+def shell_steps(command: str) -> list[str]:
+    """Split a shell command at |, ;, &&, || and newlines that sit outside quotes; a heredoc stays one step."""
+    if "<<" in command:
+        return [command]
+    steps, current, quote = [], "", None
+    for ch in command:
+        if quote:
+            quote = None if ch == quote else quote
+        elif ch in "'\"":
+            quote = ch
+        elif ch in "|;&\n":
+            steps.append(current)
+            current = ""
+            continue
+        current += ch
+    return [step for step in steps + [current] if step.strip()]
 
 
 def local_reads(calls: list[dict], filenames: list[str]) -> list[str]:
@@ -273,13 +292,15 @@ def local_reads(calls: list[dict], filenames: list[str]) -> list[str]:
     for call in calls:
         if call["name"] not in ("Read", "Bash", "Grep"):
             continue
-        blob = json.dumps(call["input"])
-        if call["name"] == "Bash":
-            command = str(call["input"].get("command", ""))
-            upload = re.search(r"\bcurl\b", command) and re.search(r"(-T\b|--upload-file|@)", command)
-            if upload or not CONTENT_READERS.search(command):
+        if call["name"] != "Bash":
+            found += [f for f in filenames if f in json.dumps(call["input"])]
+            continue
+        # Judge each piped or chained step on its own; a file name inside a URL is a download, not the local file.
+        for step in shell_steps(str(call["input"].get("command", ""))):
+            step = re.sub(r"https?://\S+", "", step)
+            if UPLOAD.search(step) or not CONTENT_READERS.search(step):
                 continue
-        found += [f for f in filenames if f in blob]
+            found += [f for f in filenames if f in step]
     return found
 
 
@@ -408,7 +429,8 @@ def rescore(row: dict, case: dict) -> dict:
     if row.get("search_hits") is None:  # recorded before hits were saved: stored results are cut, keep the live verdict
         live = {c["check"]: c for c in row["checks"]}
         checks = [live.get("capability", c) if c["check"] == "capability" else c for c in checks]
-    checks += [c for c in row["checks"] if c["check"] == "judge"]
+    if expectations(case, row["model"]).get("judge"):
+        checks += [c for c in row["checks"] if c["check"] == "judge"]
     decided = [c["pass"] for c in checks if c["pass"] is not None]
     status = "fail" if False in decided else "error" if row.get("error") else "pass" if decided else "unknown"
     return {**row, "checks": checks, "status": status, **summarize(trace)}
@@ -419,8 +441,8 @@ def rescore(row: dict, case: dict) -> dict:
 
 def redact(text: str) -> str:
     """Keep the operator's machine paths and record ids out of the excerpts a public report shows."""
-    text = re.sub(r"[^\s`'\"()]*evident-eval-[^\s`'\"()]*", "<work dir>", text)
-    return re.sub(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", "<id>", text)
+    text = re.sub(r"[\w./-]*evident-eval-[\w./-]*", "<work dir>", text)
+    return re.sub(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", "<id>", text, flags=re.I)
 
 
 def pct(passed: int, total: int) -> str:
