@@ -36,7 +36,7 @@ For a short run you can skip the file and set `EVIDENT_MCP_URL` plus `EVIDENT_TO
 
 That runs every case on all three models (3 runs each for trigger, near-miss and routing cases) and writes
 `evals/report.md`, with each run's full record under `evals/results/<timestamp>/runs.jsonl` (ignored by git).
-A full run is about 1,200 conversations, so expect a few hours at the default `--concurrency 4`.
+A full run is 1,180 conversations; the first one took about 70 minutes at `--concurrency 6`.
 
 Claude runs on your own subscription login (`claude` signed in with your Claude plan). The runner removes
 `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL` and the Bedrock and Vertex switches from every
@@ -48,7 +48,7 @@ Useful options:
 python3 evals/run.py --models haiku --category should_trigger --category near_miss   # a slice
 python3 evals/run.py --id 'cap-*' --repeats 1                                         # case ids by glob
 python3 evals/run.py --no-mcp --no-judge --category routing                           # no server needed
-python3 evals/run.py report evals/results/<timestamp>                                 # rebuild report.md
+python3 evals/run.py report evals/results/<timestamp>                                 # re-score and rebuild report.md
 ```
 
 ## What the test org needs
@@ -81,7 +81,7 @@ passes by stopping (the skill's model rule) instead of having to read the refere
 
 | Check | Passes when |
 | -- | -- |
-| `skill` | The `evident` skill fired (`true`) or did not (`false`) |
+| `skill` | The `evident` skill fired (`true`) or did not (`false`). Only should-trigger, near-miss and routing cases check it; the report shows the firing rate for every category |
 | `refs_read` / `refs_not_read` | These reference files were read / were not read |
 | `no_evident_tools` | No Evident tool was called |
 | `tools_any` / `tools_none` | At least one of these Evident operations ran / none of them ran (a capability run counts as the capability it ran) |
@@ -95,6 +95,10 @@ A run passes when every check it could decide passed, and fails when any decided
 later timed out. Checks that need the Evident server, and the judge, are skipped when the run has none. A
 capability case with no `capability_search` call leaves the search check undecided rather than counting a miss.
 A judge call that fails is recorded as unknown, never as a pass or a fail.
+
+`report` scores a finished run again against the current `cases.jsonl` (keeping the recorded judge verdicts), so a
+corrected expectation doesn't need a new run. It also pulls in `suggestions.md`, the hand-written findings, and
+redacts local paths and record ids from the excerpts.
 
 The capability cases cover the 40 most-used operations that are not named tools, from 90 days of real MCP usage.
 Routing cases target the reference files `answer`, `questionnaire`, `portal`, `review`, `knowledge`, `setup` and
