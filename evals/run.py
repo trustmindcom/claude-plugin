@@ -87,7 +87,7 @@ class Tokens:
             if entry.get("access_token") and entry.get("expires_at", 0) - time.time() > REFRESH_MARGIN_S:
                 return entry["access_token"]
             body = urllib.parse.urlencode({
-                "grant_type": "refresh_token", "refresh_token": entry["refresh_token"], "client_id": self.data["client_id"],
+                "grant_type": "refresh_token", "refresh_token": entry["refresh_token"], "client_id": entry.get("client_id") or self.data["client_id"],
             }).encode()  # fmt: skip
             request = urllib.request.Request(f"{self.mcp_url.rstrip('/')}/token", data=body, method="POST")
             with urllib.request.urlopen(request, timeout=30) as response:

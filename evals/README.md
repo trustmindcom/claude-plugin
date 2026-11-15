@@ -31,6 +31,7 @@ client id the tokens were issued to, and a refresh token for each test user:
 
 Access tokens last an hour and a full run takes hours, so the runner refreshes each one shortly before it expires
 and writes the new refresh token back (the server replaces it on every refresh). Refresh tokens last 30 days.
+A role may carry its own `"client_id"` when its tokens came from a different OAuth client.
 For a short run you can skip the file and set `EVIDENT_MCP_URL` plus `EVIDENT_TOKEN_<ROLE>` access tokens instead.
 
 That runs every case on all three models (3 runs each for trigger, near-miss and routing cases) and writes
