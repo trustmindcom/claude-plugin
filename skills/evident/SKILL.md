@@ -1,6 +1,6 @@
 ---
 name: evident
-description: Use for any question about the user's own company, product or practices in security, privacy, compliance, legal or IT, such as "do we encrypt at rest?", "are we SOC 2?", "what's our data retention?", "how does our product handle SSO?". Also use for customer trust work: security questionnaires, RFPs and RFIs, vendor portals, a customer's security review, the Trust Center, and the company's security documents and approved answers. Answers come from the company's Evident workspace. Not for general explanations of a standard or technology, such as what SOC 2 is or how AES-256 works.
+description: "Use for any question about the user's own company, product or practices in security, privacy, compliance, legal or IT, such as \"do we encrypt at rest?\", \"are we SOC 2?\", \"what's our data retention?\", \"how does our product handle SSO?\". Also use for customer trust work: security questionnaires, RFPs and RFIs, vendor portals, a customer's security review, the Trust Center, and the company's security documents and approved answers. Answers come from the company's Evident workspace. Not for general explanations of a standard or technology, such as what SOC 2 is or how AES-256 works."
 ---
 
 # Evident
