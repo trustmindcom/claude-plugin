@@ -190,7 +190,7 @@ def parse_stream(stdout: str) -> dict:
                     calls.append(call)
                     by_id[block.get("id", "")] = call
                 elif block.get("type") == "tool_result" and block.get("tool_use_id") in by_id:
-                    by_id[block["tool_use_id"]]["result"] = result_text(block.get("content"))[:20000]
+                    by_id[block["tool_use_id"]]["result"] = result_text(block.get("content"))[:200000]
         elif kind == "result":
             trace["final_text"] = event.get("result") or ""
             trace["cost_usd"] = event.get("total_cost_usd")
@@ -255,20 +255,52 @@ def search_hits(calls: list[dict]) -> list[list[str]]:
             ) if isinstance(payload, dict) else []
             names = [str(i.get("name")) for i in items if isinstance(i, dict) and i.get("name")]
         else:
-            names = re.findall(r'"name"\s*:\s*"([a-z0-9_]+)"', call["result"] or "")
+            # A cut-off result: each match's name comes first, then repeats in its example call.
+            names = list(dict.fromkeys(re.findall(r'"name"\s*:\s*"([a-z0-9_]+)"', call["result"] or "")))
         hits.append(names)
     return hits
 
 
+CONTENT_READERS = re.compile(
+    r"\b(cat|head|tail|less|more|strings|xxd|od|python3?|node|unzip|zipinfo|bsdtar|xlsx2csv|in2csv|csvlook|pandoc"
+    r"|soffice|libreoffice|pdftotext|docx2txt|textutil|awk|sed|grep|rg|base64|jq|perl|hexdump|cut)\b"
+)
+UPLOAD = re.compile(r"\bcurl\b.*(-T\b|--upload-file|--data-binary\s+['\"]?@|-F\s+['\"]?\w+=@)")
+
+
+def shell_steps(command: str) -> list[str]:
+    """Split a shell command at |, ;, &&, || and newlines that sit outside quotes; a heredoc stays one step."""
+    if "<<" in command:
+        return [command]
+    steps, current, quote = [], "", None
+    for ch in command:
+        if quote:
+            quote = None if ch == quote else quote
+        elif ch in "'\"":
+            quote = ch
+        elif ch in "|;&\n":
+            steps.append(current)
+            current = ""
+            continue
+        current += ch
+    return [step for step in steps + [current] if step.strip()]
+
+
 def local_reads(calls: list[dict], filenames: list[str]) -> list[str]:
-    """Fixture files the run opened itself. Uploading the file with curl is the allowed way to touch it."""
+    """Fixture files the run read itself. Uploading with curl and metadata (stat, ls, a checksum) are allowed."""
     found = []
     for call in calls:
         if call["name"] not in ("Read", "Bash", "Grep"):
             continue
-        blob = json.dumps(call["input"])
-        upload = call["name"] == "Bash" and re.search(r"\bcurl\b", blob) and re.search(r"(-T\b|--upload-file|@)", blob)
-        found += [f for f in filenames if f in blob and not upload]
+        if call["name"] != "Bash":
+            found += [f for f in filenames if f in json.dumps(call["input"])]
+            continue
+        # Judge each piped or chained step on its own; a file name inside a URL is a download, not the local file.
+        for step in shell_steps(str(call["input"].get("command", ""))):
+            step = re.sub(r"https?://\S+", "", step)
+            if UPLOAD.search(step) or not CONTENT_READERS.search(step):
+                continue
+            found += [f for f in filenames if f in step]
     return found
 
 
@@ -304,7 +336,7 @@ def score(case: dict, model: str, trace: dict, summary: dict, mcp: bool) -> list
         bad = [t for t in exp["tools_none"] if t in calls]
         check("tools_none", not bad, ", ".join(bad))
     if exp.get("capability"):
-        hits = search_hits(trace["calls"])
+        hits = trace["search_hits"] if trace.get("search_hits") is not None else search_hits(trace["calls"])
         if hits:
             top3 = any(exp["capability"] in names[:3] for names in hits)
             check("capability", top3, f"searches={[names[:3] for names in hits]}")
@@ -316,7 +348,10 @@ def score(case: dict, model: str, trace: dict, summary: dict, mcp: bool) -> list
             for c in trace["calls"]
             if evident_name(c["name"]) in RUN_TOOLS and c["input"].get("name") == exp.get("capability")
         ]
-        check("run_tool", exp["run_tool"] in ran, f"ran={ran}")
+        # An operation that needs the user's approval is previewed through capability_run_read first; with no user
+        # in a headless run, stopping at that preview is the right end.
+        allowed = {exp["run_tool"]} | ({"capability_run_read"} if exp["run_tool"] == "capability_run_destructive" else set())
+        check("run_tool", bool(allowed & set(ran)), f"ran={ran}")
     if exp.get("no_local_read"):
         reads = local_reads(trace["calls"], exp["no_local_read"])
         check("no_local_read", not reads, ", ".join(sorted(set(reads))))
@@ -379,12 +414,35 @@ def run_one(job, tokens: Tokens | None, judge_model: str | None) -> dict:
         "api_key_source": trace["api_key_source"], "status": status,
         **summary, "checks": checks,
         "tool_calls": [{"name": c["name"], "input": c["input"], "result": c["result"][:2000]} for c in trace["calls"]],
+        "search_hits": search_hits(trace["calls"]),
         "final_text": trace["final_text"], "cost_usd": trace["cost_usd"], "turns": trace["turns"],
         "duration_s": trace["duration_s"], "error": trace["error"],
     }  # fmt: skip
 
 
+def rescore(row: dict, case: dict) -> dict:
+    """Score a recorded run again against the current case, keeping its recorded judge verdict."""
+    if str(row.get("error") or "").startswith("runner:"):
+        return row
+    trace = {"calls": row["tool_calls"], "final_text": row["final_text"], "search_hits": row.get("search_hits")}
+    checks = score(case, row["model"], trace, summarize(trace), row["mcp"])
+    if row.get("search_hits") is None:  # recorded before hits were saved: stored results are cut, keep the live verdict
+        live = {c["check"]: c for c in row["checks"]}
+        checks = [live.get("capability", c) if c["check"] == "capability" else c for c in checks]
+    if expectations(case, row["model"]).get("judge"):
+        checks += [c for c in row["checks"] if c["check"] == "judge"]
+    decided = [c["pass"] for c in checks if c["pass"] is not None]
+    status = "fail" if False in decided else "error" if row.get("error") else "pass" if decided else "unknown"
+    return {**row, "checks": checks, "status": status, **summarize(trace)}
+
+
 # --- Report ----------------------------------------------------------------------------------------------------
+
+
+def redact(text: str) -> str:
+    """Keep the operator's machine paths and record ids out of the excerpts a public report shows."""
+    text = re.sub(r"[\w./-]*evident-eval-[\w./-]*", "<work dir>", text)
+    return re.sub(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", "<id>", text, flags=re.I)
 
 
 def pct(passed: int, total: int) -> str:
@@ -400,7 +458,9 @@ def write_report(rows: list[dict], out: Path, meta: dict) -> None:
     lines = [
         "# Evident plugin eval report", "",
         f"Run `{meta['run_id']}` · plugin `{meta['plugin_commit']}` · {len(rows)} runs · "
-        f"MCP: {'yes' if meta['mcp'] else 'no'} · cost ${sum(r['cost_usd'] or 0 for r in rows):.2f}", "",
+        f"MCP: {'yes' if meta['mcp'] else 'no'}", "",
+        f"Claude usage at API list prices, as the CLI reports it: ${sum(r['cost_usd'] or 0 for r in rows):.2f}. "
+        "On a subscription login this is a usage measure, not a bill.", "",
         "Claude login per run (`apiKeySource` from the CLI; `none` means the subscription login): "
         + ", ".join(f"{k} {v}" for k, v in sorted(Counter(str(r.get("api_key_source")) for r in rows).items())) + ".", "",
         "Pass rate counts runs where every decided check passed. Errors (timeouts, CLI failures) and runs with only "
@@ -422,15 +482,15 @@ def write_report(rows: list[dict], out: Path, meta: dict) -> None:
         lines += [f"Not scored: {sum(r['status'] == 'error' for r in other)} errors, "
                   f"{sum(r['status'] == 'unknown' for r in other)} with no decided check.", ""]  # fmt: skip
 
-    lines += ["## Skill firing and routing", "", "| Model | Fired on should-trigger | Fired on near-miss | Right reference only |",
-              "| -- | -- | -- | -- |"]  # fmt: skip
-    for m in models:
-        trig = [r for r in rows if r["model"] == m and r["category"] == "should_trigger" and not r["error"]]
-        near = [r for r in rows if r["model"] == m and r["category"] == "near_miss" and not r["error"]]
-        route = [r for r in decided if r["model"] == m and r["category"] == "routing"]
-        lines.append(f"| {m} | {pct(sum(r['skill_fired'] for r in trig), len(trig))} | "
-                     f"{pct(sum(r['skill_fired'] for r in near), len(near))} | "
-                     f"{pct(sum(r['status'] == 'pass' for r in route), len(route))} |")  # fmt: skip
+    lines += ["## How often the skill fired", "",
+              "Every category, including those whose checks don't require it. It should fire on everything except "
+              "near misses.", "", "| Category | " + " | ".join(models) + " |", "| -- | " + " | ".join("--" for _ in models) + " |"]  # fmt: skip
+    for cat in categories:
+        cells = []
+        for m in models:
+            sel = [r for r in rows if r["category"] == cat and r["model"] == m and not r["error"]]
+            cells.append(pct(sum(r["skill_fired"] for r in sel), len(sel)))
+        lines.append(f"| {cat} | " + " | ".join(cells) + " |")
 
     by_case: dict[str, list[dict]] = defaultdict(list)
     for r in decided:
@@ -445,7 +505,7 @@ def write_report(rows: list[dict], out: Path, meta: dict) -> None:
     for cid, rs in worst:
         failed = [r for r in rs if r["status"] == "fail"]
         sample = failed[0]
-        bad = [f"{c['check']}: {c['detail']}" for c in sample["checks"] if c["pass"] is False]
+        bad = [f"{c['check']}: {redact(c['detail'])}" for c in sample["checks"] if c["pass"] is False]
         lines += [
             f"### {cid} ({sample['category']}, role {sample['role']}): failed {len(failed)}/{len(rs)} runs "
             f"({', '.join(sorted({r['model'] for r in failed}))})", "",
@@ -453,7 +513,7 @@ def write_report(rows: list[dict], out: Path, meta: dict) -> None:
             f"- Failed checks ({sample['model']} run {sample['run']}): " + "; ".join(bad),
             f"- Skill fired: {sample['skill_fired']} · references read: {sample['refs_read'] or 'none'}",
             f"- Tool calls: {', '.join(c['name'].removeprefix(MCP_PREFIX) for c in sample['tool_calls']) or 'none'}", "",
-            "```text", (sample["final_text"] or "(no final text)")[:EXCERPT_CHARS].strip(), "```", "",
+            "```text", redact((sample["final_text"] or "(no final text)")[:EXCERPT_CHARS].strip()), "```", "",
         ]  # fmt: skip
 
     lines += ["## Capability search misses", "",
@@ -486,6 +546,8 @@ def main() -> None:
         run_dir = Path(sys.argv[2])
         rows = [json.loads(l) for l in (run_dir / "runs.jsonl").read_text().splitlines() if l.strip()]
         meta = json.loads((run_dir / "meta.json").read_text())
+        cases = {c["id"]: c for c in load_cases(EVALS / "cases.jsonl")}
+        rows = [rescore(row, cases[row["id"]]) if row["id"] in cases else row for row in rows]
         write_report(rows, Path(sys.argv[3]) if len(sys.argv) > 3 else EVALS / "report.md", meta)
         return
 
