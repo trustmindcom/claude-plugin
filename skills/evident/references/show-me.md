@@ -2,15 +2,28 @@
 
 Use when a browser tool is present: Claude Desktop's built in browser (`Claude_Browser__*`) or Claude in Chrome (`claude-in-chrome__*`).
 
-1. Open the page. Pages render client side; wait until the text you expect is on the page before doing anything else (poll `document.querySelector('main').innerText`).
-2. If the URL is `/login/`, stop and ask the user to sign in. Never type credentials.
+The app is at `https://app.evident.security`. Pages to point at:
+
+| What | Path | `guide` ids | `match` text if the id is missing |
+| --- | --- | --- | --- |
+| Approvals | `/dashboard/organization/workflow/` | `settings-approvals-download`, `settings-approvals-reuse` | "Approve before download", "Approve before saving for reuse" |
+| Products | `/dashboard/organization/products/` | `settings-products` | "Products" |
+| Answer style | `/dashboard/organization/answer-style/` | `settings-answer-style` | "Answer style" |
+| People | `/dashboard/organization/people/` | `settings-members` | "Members" |
+| Questionnaires | `/dashboard/answer-questions/` | `nav-questionnaires`, `upload-questionnaire` | "Questionnaires" |
+| Knowledge | `/dashboard/manage-data/` | `nav-knowledge`, `upload-document` | "Knowledge Base" |
+
+Other ids the app may have: `nav-conflicts`, `nav-trust-center`, `nav-settings`, `connect-integration`, `settings-teams`, `question-assign`, `question-approve`, `question-sources`, `inferred-answer-accept`, `conflict-resolve`, `sheet-toggle`, `chat-open`, `client-switcher`.
+
+1. Open the page. Pages render client side; wait until the text you expect is on the page before doing anything else (poll `document.querySelector('main')?.innerText`).
+2. If the path starts with `/login`, stop and ask the user to sign in in that browser, then continue when they say they have. Never type credentials, and never fill or submit the sign in form.
 3. Read the page and decide what to point at from what is actually there. Write the bubble text for this user: name their numbers, their questionnaires, their people. Two or three sentences.
 4. Inject `scripts/evident-guide.js` with the JavaScript tool, then call:
 
    ```js
    evidentGuide.show({
-     guide: "workflow.approvals",          // a data-guide id, when the app has one
-     match: "Approve before download",     // or visible text to find
+     guide: "settings-approvals-download",  // a data-guide id from the table
+     match: "Approve before download",      // visible text, used when the id is not on the page
      climb: 2,                              // parents to climb from the matched text
      tag: "Approvals",
      title: "Want approvals?",
@@ -19,6 +32,7 @@ Use when a browser tool is present: Claude Desktop's built in browser (`Claude_B
    })
    ```
 
+   It returns `{ ok: true }`, or `{ ok: false, reason }`. On `"not ready"` the page is still loading: wait a second and call again. On `"target not found"`, point at something else on the page or explain in chat.
 5. Poll `evidentGuide.answer()` to learn which button they pressed, or wait for them to reply in chat. Then show the next thing, do what they chose, or `evidentGuide.clear()`.
 6. Navigation reloads the page and removes the guide; inject again on the next page.
 

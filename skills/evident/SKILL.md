@@ -95,4 +95,4 @@ When the user wants to see something, or the setup step is clearer on screen, an
 
 If the page shows the sign in screen, stop and ask the user to sign in. Never enter credentials.
 
-Without a browser tool, explain in chat and give a direct link. Many pages accept a tab parameter, for example `/dashboard/organization/answer-style/?tab=gaps`.
+Without a browser tool, explain in chat and give a direct link on `https://app.evident.security` (page paths are in `references/show-me.md`). Many pages accept a tab parameter, for example `https://app.evident.security/dashboard/organization/answer-style/?tab=gaps`.

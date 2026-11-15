@@ -2,6 +2,8 @@
 
 One suggestion per reply at most. Skip any the user has declined or already uses. Check state with the MCP tools before suggesting; never suggest a setup step that is already done.
 
+When `onboarding_get_state` is available, skip any suggestion whose `claude:` id is in `tooltips_shown`, and after making one, record it with `onboarding_record` (`tooltip_shown`). Ids: `claude:answer-style`, `claude:products`, `claude:slack`, `claude:approvals`, `claude:conflicts`, `claude:portal`, `claude:trust-center`, `claude:tour`.
+
 | When you notice | Offer | How to check first |
 | --- | --- | --- |
 | Session start with work waiting | "You have N questionnaires waiting on you, oldest from <date>. Want to start with <name>?" | `questionnaire_triage_open_work` |
