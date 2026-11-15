@@ -260,15 +260,25 @@ def search_hits(calls: list[dict]) -> list[list[str]]:
     return hits
 
 
+CONTENT_READERS = re.compile(
+    r"\b(cat|head|tail|less|more|strings|xxd|od|python3?|node|unzip|zipinfo|bsdtar|xlsx2csv|in2csv|csvlook|pandoc"
+    r"|soffice|libreoffice|pdftotext|docx2txt|textutil|awk|sed|grep|rg)\b"
+)
+
+
 def local_reads(calls: list[dict], filenames: list[str]) -> list[str]:
-    """Fixture files the run opened itself. Uploading the file with curl is the allowed way to touch it."""
+    """Fixture files the run read itself. Uploading with curl and metadata (stat, ls, a checksum) are allowed."""
     found = []
     for call in calls:
         if call["name"] not in ("Read", "Bash", "Grep"):
             continue
         blob = json.dumps(call["input"])
-        upload = call["name"] == "Bash" and re.search(r"\bcurl\b", blob) and re.search(r"(-T\b|--upload-file|@)", blob)
-        found += [f for f in filenames if f in blob and not upload]
+        if call["name"] == "Bash":
+            command = str(call["input"].get("command", ""))
+            upload = re.search(r"\bcurl\b", command) and re.search(r"(-T\b|--upload-file|@)", command)
+            if upload or not CONTENT_READERS.search(command):
+                continue
+        found += [f for f in filenames if f in blob]
     return found
 
 
