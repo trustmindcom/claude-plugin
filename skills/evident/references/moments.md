@@ -17,6 +17,6 @@ When `onboarding_get_state` is available, skip any suggestion whose `claude:` id
 | Several open conflicts | Why conflicts are how the library stays current with no curation; offer to go through them together. | `conflict_list`* `total` |
 | The user is about to accept an inference | Say it becomes a confirmed source used in future answers. | Callout on the answer |
 | A questionnaire arrives on a vendor portal | Fill it from here in their browser, or in Evident's browser (`references/portal.md`). Never press Submit. | Browser tools present, and your model |
-| An RFI or RFP arrives | Create it as `vendor_evaluation`; leave prices and contract terms to the user (`references/questionnaire.md`). | Guide at evident.security/guides/rfi-rfp-mcp.md |
+| An RFI or RFP arrives | Create it as `vendor_evaluation`; leave prices and contract terms to the user. | "RFI or RFP" in `references/questionnaire.md` or `references/portal.md` |
 | Buyers keep asking for the same documents | The Trust Center, with access that expires. | `trust_center_get_settings` |
 | The user works in the app and asks how to do something | Offer to show them on screen. | Browser tools present |

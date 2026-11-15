@@ -22,6 +22,8 @@ Ask Claude about your company's security, privacy, compliance and product ("do w
 
 Some work needs a more capable Claude model: portals filled in your own browser need Opus, and anything beyond quick questions needs Sonnet or Opus. Claude says so before it starts.
 
+Evident logs the words Claude uses in `capability_search`, and which capability it then runs, to improve how tools are matched. It never logs your conversation, answers or documents.
+
 The tour never types your password. If the app asks you to sign in, Claude stops and waits for you.
 
 [Privacy policy](https://evident.security/privacy-policy/)

@@ -18,9 +18,19 @@ For a security questionnaire, RFI or RFP on a portal (OneTrust, Whistic, Service
    - Type only the answers Evident returns, exactly as written.
    - **File uploads:** with Claude in Chrome, attach each file with `file_upload` when you can get the file. Otherwise, or in the built-in browser, end with a clear list of each file and the field it goes in, for the user to upload. Once a file is on the portal, attached by you or by the user, record it with `portal_fill_record` `uploaded`.
 5. **In Evident's browser:** call `portal_start` with the URL. Its first reply is a summary for the user to approve; nothing starts until they confirm. Evident fills the portal itself.
-6. **RFI or RFP:** pass `questionnaire_kind='vendor_evaluation'` to `portal_fill_open` or `portal_start`; the type can't be changed afterwards. Never write a price or accept a contract term: leave those for the user.
+6. **RFI or RFP:** pass `questionnaire_kind='vendor_evaluation'` to `portal_fill_open` or `portal_start`, and follow "RFI or RFP" below.
 7. **Never press Submit**, Complete, Send, or anything that hands the questionnaire in. The user submits.
 8. **Finish** with the steps below.
+
+## RFI or RFP
+
+An RFI (request for information) or RFP (request for proposal) is the questionnaire type `vendor_evaluation`; a security questionnaire is the default type.
+
+- **Type first.** Pass `questionnaire_kind='vendor_evaluation'` on the call that creates it. The type can't be changed afterwards. When you are not sure whether it is an RFI, an RFP or a security questionnaire, ask. If Evident says the type is not enabled, tell the user an admin turns on RFI/RFP support in Evident's Settings; do not create it as a security questionnaire unless they ask.
+- **Read the buyer's instructions before anything is answered:** the cover sheet, instructions tab, introduction or the portal's help text. Look for the response scale (such as "Yes / Partial / No / Roadmap") and what each value means, length limits, which answers need an explanation or a reference, where pricing may and may not go, and the due date. Tell the user what you found in a few lines.
+- **Past answers to this buyer:** `question_search` with `customer_query` set to the buyer's name shows what was told to them before. Use it to point out differences; Evident still writes the answers.
+- **Never** press Submit or sign anything; write a price, discount, fee, rate or any other commercial figure, even when a field asks for one; accept or confirm a contract term, legal clause, terms and conditions or a declaration; or write an answer Evident did not return.
+- **At the end, list what still needs a person:** pricing and other commercial questions; contract, legal and terms questions, declarations and signatures; open gaps; any requirement the product does not meet; fields you could not place, with the reason; and files to attach.
 
 ## Finish: triage, review, approve
 
