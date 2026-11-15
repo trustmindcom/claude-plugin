@@ -111,7 +111,8 @@ def run_claude(case: dict, model: str, mcp_url: str | None, token: str | None) -
             proc = subprocess.run(cmd, cwd=work, capture_output=True, text=True, timeout=RUN_TIMEOUT_S)
             stdout, error = proc.stdout, (proc.stderr.strip()[-500:] if proc.returncode else "")
         except subprocess.TimeoutExpired as exc:
-            stdout, error = (exc.stdout or b"").decode() if isinstance(exc.stdout, bytes) else (exc.stdout or ""), "timeout"
+            raw = exc.stdout or b""
+            stdout, error = (raw.decode(errors="replace") if isinstance(raw, bytes) else raw), "timeout"
         trace = parse_stream(stdout)
         trace["duration_s"] = round(time.monotonic() - started, 1)
         if error and not trace.get("error"):
@@ -218,13 +219,19 @@ def local_reads(calls: list[dict], filenames: list[str]) -> list[str]:
         if call["name"] not in ("Read", "Bash", "Grep"):
             continue
         blob = json.dumps(call["input"])
-        upload = call["name"] == "Bash" and re.search(r"\bcurl\b.*(-T\b|--upload-file|--data-binary\s+@)", blob)
+        upload = call["name"] == "Bash" and re.search(r"\bcurl\b", blob) and re.search(r"(-T\b|--upload-file|@)", blob)
         found += [f for f in filenames if f in blob and not upload]
     return found
 
 
-def score(case: dict, trace: dict, summary: dict, mcp: bool) -> list[dict]:
-    exp = case["expect"]
+def expectations(case: dict, model: str) -> dict:
+    """The case's checks, with any per-model override (expect.by_model.<model>) applied."""
+    exp = {k: v for k, v in case["expect"].items() if k != "by_model"}
+    return {**exp, **case["expect"].get("by_model", {}).get(model, {})}
+
+
+def score(case: dict, model: str, trace: dict, summary: dict, mcp: bool) -> list[dict]:
+    exp = expectations(case, model)
     calls = summary["evident_calls"]
     checks: list[dict] = []
 
@@ -250,8 +257,11 @@ def score(case: dict, trace: dict, summary: dict, mcp: bool) -> list[dict]:
         check("tools_none", not bad, ", ".join(bad))
     if exp.get("capability"):
         hits = search_hits(trace["calls"])
-        top3 = any(exp["capability"] in names[:3] for names in hits)
-        check("capability", top3, f"searches={[names[:3] for names in hits]}")
+        if hits:
+            top3 = any(exp["capability"] in names[:3] for names in hits)
+            check("capability", top3, f"searches={[names[:3] for names in hits]}")
+        else:
+            check("capability", None, "no capability_search call")
     if exp.get("run_tool"):
         ran = [
             evident_name(c["name"])
@@ -267,14 +277,14 @@ def score(case: dict, trace: dict, summary: dict, mcp: bool) -> list[dict]:
     return checks
 
 
-def judge(case: dict, trace: dict, summary: dict, judge_model: str) -> dict:
+def judge(case: dict, criteria: str, trace: dict, judge_model: str) -> dict:
     tools = "\n".join(
         f"- {c['name']} {json.dumps(c['input'])[:300]}" for c in trace["calls"] if c["name"] != "Read"
     ) or "(none)"
     prompt = (
         "You grade one run of an AI assistant that has the Evident plugin (a trust and security questionnaire "
         "product). Decide PASS or FAIL using only the criteria.\n\n"
-        f"CRITERIA:\n{case['expect']['judge']}\n\nUSER ROLE: {case['role']}\n\nUSER MESSAGE:\n{case['prompt']}\n\n"
+        f"CRITERIA:\n{criteria}\n\nUSER ROLE: {case['role']}\n\nUSER MESSAGE:\n{case['prompt']}\n\n"
         f"TOOL CALLS:\n{tools}\n\nFINAL REPLY:\n{trace['final_text'][:6000]}\n\n"
         'Answer with one line of JSON and nothing else: {"pass": true|false, "reason": "<one sentence>"}'
     )
@@ -293,13 +303,27 @@ def run_one(job, mcp_url: str | None, judge_model: str | None) -> dict:
     case, model, index = job
     token = role_token(case["role"]) if mcp_url else None
     mcp = bool(mcp_url and token)
-    trace = run_claude(case, model, mcp_url, token)
+    try:
+        trace = run_claude(case, model, mcp_url, token)
+    except Exception as exc:  # one broken run is recorded, never allowed to stop the batch
+        trace = {"calls": [], "final_text": "", "cost_usd": None, "turns": None, "mcp_status": None,
+                 "duration_s": 0, "error": f"runner: {type(exc).__name__}: {exc}"}  # fmt: skip
     summary = summarize(trace)
-    checks = score(case, trace, summary, mcp)
-    if case["expect"].get("judge") and judge_model and not trace["error"]:
-        checks.append(judge(case, trace, summary, judge_model))
+    crashed = str(trace["error"] or "").startswith("runner:")
+    checks = [] if crashed else score(case, model, trace, summary, mcp)
+    criteria = expectations(case, model).get("judge")
+    if criteria and judge_model and not trace["error"]:
+        if mcp:
+            checks.append(judge(case, criteria, trace, judge_model))
+        else:
+            checks.append({"check": "judge", "pass": None, "detail": "skipped: no MCP server for this run"})
     decided = [c["pass"] for c in checks if c["pass"] is not None]
-    status = "error" if trace["error"] else ("pass" if decided and all(decided) else "fail" if decided else "unknown")
+    if False in decided:
+        status = "fail"  # a violation before a timeout or CLI error still counts
+    elif trace["error"]:
+        status = "error"
+    else:
+        status = "pass" if decided else "unknown"
     return {
         "id": case["id"], "category": case["category"], "role": case["role"], "model": model, "run": index,
         "prompt": case["prompt"], "mcp": mcp, "mcp_status": trace["mcp_status"], "status": status,
@@ -318,6 +342,8 @@ def pct(passed: int, total: int) -> str:
 
 
 def write_report(rows: list[dict], out: Path, meta: dict) -> None:
+    suggestions = EVALS / "suggestions.md"
+    meta = {**meta, "suggestions": suggestions.read_text() if suggestions.exists() else None}
     models = [m for m in MODELS if any(r["model"] == m for r in rows)]
     categories = sorted({r["category"] for r in rows}, key=lambda c: list(CATEGORY_ORDER).index(c) if c in CATEGORY_ORDER else 99)
     decided = [r for r in rows if r["status"] in ("pass", "fail")]
@@ -408,8 +434,6 @@ def main() -> None:
         run_dir = Path(sys.argv[2])
         rows = [json.loads(l) for l in (run_dir / "runs.jsonl").read_text().splitlines() if l.strip()]
         meta = json.loads((run_dir / "meta.json").read_text())
-        suggestions = EVALS / "suggestions.md"
-        meta["suggestions"] = suggestions.read_text() if suggestions.exists() else None
         write_report(rows, Path(sys.argv[3]) if len(sys.argv) > 3 else EVALS / "report.md", meta)
         return
 
@@ -451,7 +475,7 @@ def main() -> None:
 
     lock, rows = threading.Lock(), []
     judge_model = None if args.no_judge else args.judge_model
-    with futures.ThreadPoolExecutor(max_workers=args.concurrency) as pool, open(out / "runs.jsonl", "a") as sink:
+    with futures.ThreadPoolExecutor(max_workers=args.concurrency) as pool, open(out / "runs.jsonl", "w") as sink:
         pending = [pool.submit(run_one, job, mcp_url, judge_model) for job in jobs]
         for n, fut in enumerate(futures.as_completed(pending), 1):
             row = fut.result()

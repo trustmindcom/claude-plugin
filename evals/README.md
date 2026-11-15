@@ -55,6 +55,9 @@ does, and asking which questionnaire the user means is a fine answer.
 | `files` | Optional fixture files from `fixtures/` placed in the working directory |
 | `expect` | The checks below |
 
+`expect.by_model` overrides checks for one model. Routing cases use it so that, for work beyond lookups, Haiku
+passes by stopping (the skill's model rule) instead of having to read the reference file.
+
 `expect` checks, all scored from the trace:
 
 | Check | Passes when |
@@ -69,12 +72,14 @@ does, and asking which questionnaire the user means is a fine answer.
 | `text_has` | The final reply contains this text |
 | `judge` | A Haiku judge applies these PASS/FAIL criteria to the reply and tool calls |
 
-A run passes when every check it could decide passed. A check that needs the Evident server is skipped when the
-run has none, and a judge call that fails is recorded as unknown, never as a pass or a fail.
+A run passes when every check it could decide passed, and fails when any decided check failed, even if the run
+later timed out. Checks that need the Evident server, and the judge, are skipped when the run has none. A
+capability case with no `capability_search` call leaves the search check undecided rather than counting a miss.
+A judge call that fails is recorded as unknown, never as a pass or a fail.
 
 The capability cases cover the 40 most-used operations that are not named tools, from 90 days of real MCP usage.
 Routing cases target the reference files `answer`, `questionnaire`, `portal`, `review`, `knowledge`, `setup` and
-`tour`.
+`tour` from the v2 skill layout. On a plugin without those files, the routing results mean nothing.
 
 ## How a run is isolated
 
