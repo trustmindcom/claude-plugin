@@ -10,18 +10,37 @@ operations through `capability_search`, and it never breaks the must-never rules
 Point it at an Evident **test** organization (never a customer's) and run one command from the repo root:
 
 ```bash
-export EVIDENT_MCP_URL=https://<evident-mcp-host>/mcp
-export EVIDENT_TOKEN_ADMIN=...            # MCP access token for each test user
-export EVIDENT_TOKEN_KNOWLEDGE_EDITOR=...
-export EVIDENT_TOKEN_MEMBER=...
-export EVIDENT_TOKEN_MEMBER_EMPTY_KB=...  # a member in an organization with no documents
 python3 evals/run.py
 ```
 
+It signs in with `evals/.tokens.json` (ignored by git, owner-only), which holds the test org's MCP URL, the OAuth
+client id the tokens were issued to, and a refresh token for each test user:
+
+```json
+{
+  "mcp_url": "https://<evident-mcp-host>/mcp",
+  "client_id": "<oauth client id>",
+  "roles": {
+    "admin": {"refresh_token": "..."},
+    "knowledge_editor": {"refresh_token": "..."},
+    "member": {"refresh_token": "..."},
+    "member_empty_kb": {"refresh_token": "..."}
+  }
+}
+```
+
+Access tokens last an hour and a full run takes hours, so the runner refreshes each one shortly before it expires
+and writes the new refresh token back (the server replaces it on every refresh). Refresh tokens last 30 days.
+A role may carry its own `"client_id"` when its tokens came from a different OAuth client.
+For a short run you can skip the file and set `EVIDENT_MCP_URL` plus `EVIDENT_TOKEN_<ROLE>` access tokens instead.
+
 That runs every case on all three models (3 runs each for trigger, near-miss and routing cases) and writes
 `evals/report.md`, with each run's full record under `evals/results/<timestamp>/runs.jsonl` (ignored by git).
-It uses your own `claude` login. A full run is about 1,200 conversations, so expect a few hours at the default
-`--concurrency 4`.
+A full run is about 1,200 conversations, so expect a few hours at the default `--concurrency 4`.
+
+Claude runs on your own subscription login (`claude` signed in with your Claude plan). The runner removes
+`ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL` and the Bedrock and Vertex switches from every
+run, and the report shows the login each run used (`apiKeySource: none` is the subscription).
 
 Useful options:
 
