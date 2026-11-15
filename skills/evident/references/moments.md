@@ -4,7 +4,7 @@
 
 One suggestion per reply at most. Skip any the user has declined or already uses. Check state with the MCP tools before suggesting; never suggest a setup step that is already done. Offer knowledge steps only to Knowledge Editors and admins, and setup steps only to admins (roles in `SKILL.md`). Tools marked * are not in your tool list: call `capability_search`, then `capability_run_read`.
 
-When `onboarding_get_state` is available, skip any suggestion whose `claude:` id is in `tooltips_shown`, and after making one, record it with `onboarding_record` (`tooltip_shown`). Ids: `claude:answer-style`, `claude:products`, `claude:slack`, `claude:approvals`, `claude:conflicts`, `claude:portal`, `claude:trust-center`, `claude:tour`. Record only these ids. This list is about offers you make unprompted: when the user asks to be shown something or asks about a feature, always help, whatever was recorded.
+`onboarding_get_state` and `onboarding_record` are not in your tool list: call them with `capability_run_read` and `capability_run_write`. Skip any suggestion whose `claude:` id is in `tooltips_shown`, and after making one, record it with `onboarding_record` (`tooltip_shown`). Ids: `claude:answer-style`, `claude:products`, `claude:slack`, `claude:approvals`, `claude:conflicts`, `claude:portal`, `claude:trust-center`, `claude:tour`. Record only these ids. This list is about offers you make unprompted: when the user asks to be shown something or asks about a feature, always help, whatever was recorded.
 
 | When you notice | Offer | How to check first |
 | --- | --- | --- |
