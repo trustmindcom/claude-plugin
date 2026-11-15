@@ -1,0 +1,17 @@
+{
+  "name": "evident",
+  "owner": {
+    "name": "Evident",
+    "url": "https://evident.security"
+  },
+  "metadata": {
+    "description": "The Evident plugin for Claude."
+  },
+  "plugins": [
+    {
+      "name": "evident",
+      "source": "./",
+      "description": "Work in Evident from Claude: questionnaires, vendor portals, knowledge, conflicts, people and approvals, with a first run and an optional tour of the app."
+    }
+  ]
+}

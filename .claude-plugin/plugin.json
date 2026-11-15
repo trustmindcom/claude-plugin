@@ -1,0 +1,11 @@
+{
+  "name": "evident",
+  "description": "Evident for Claude: work in Evident through its MCP server, with a skill that knows the product and can show users around the app.",
+  "version": "0.1.0",
+  "author": { "name": "Evident", "url": "https://evident.security" },
+  "homepage": "https://evident.security/mcp/",
+  "privacyPolicyUrl": "https://evident.security/privacy-policy/",
+  "mcpServers": {
+    "evident": { "type": "http", "url": "https://mcp.evident.security/mcp" }
+  }
+}
