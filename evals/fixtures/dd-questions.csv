@@ -1,9 +1,0 @@
-ID,Question,Answer
-1.1,"Do you encrypt customer data at rest? If yes, describe the algorithm and key management.",
-1.2,Do you encrypt data in transit? Which TLS versions are supported?,
-2.1,Do you maintain a current SOC 2 Type II report? Provide the most recent report date.,
-2.2,Describe your incident response process and customer notification timelines.,
-3.1,Do you support SAML 2.0 single sign-on and SCIM provisioning?,
-3.2,How often are user access reviews performed?,
-4.1,What are your RTO and RPO for the production service?,
-4.2,List all subprocessors that store or process customer data.,
