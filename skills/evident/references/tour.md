@@ -1,6 +1,14 @@
 # Showing the user in the app
 
-Use when a browser tool is present: Claude Desktop's built in browser (`Claude_Browser__*`) or Claude in Chrome (`claude-in-chrome__*`).
+**Check your model first.** Showing works on any model: it only points at things. Changing a setting from the tour is a small action and needs the middle tier (currently Sonnet) or above; on the smallest tier (Haiku), point only and give the Haiku message in `SKILL.md` if they ask you to change something.
+
+The tour is optional. Offer it in the first run, and when the user asks "where is that?" or "show me". Its point is the lesson in `SKILL.md`: here is the app, and you can do all of it from the conversation.
+
+Use it when a browser tool is present: Claude Desktop's built-in browser (`Claude_Browser__*`) or Claude in Chrome (`claude-in-chrome__*`). Open the page, wait for it to render, inject `scripts/evident-guide.js`, and call `evidentGuide.show()` with text you write for this user from what you see on the page and what they told you. One bubble at a time. Do the action yourself only if they ask.
+
+Without a browser tool, explain in chat and give a direct link on `https://app.evident.security` (paths below). Many pages accept a tab parameter, for example `https://app.evident.security/dashboard/organization/answer-style/?tab=gaps`.
+
+If the page shows the sign-in screen, stop and ask the user to sign in. Never enter credentials.
 
 The app is at `https://app.evident.security`. Pages to point at:
 
@@ -21,7 +29,7 @@ The sidebar, on every page: `nav-questionnaires`, `nav-knowledge`, `nav-conflict
 1. Open the page. Pages render client side; poll until either the text you expect is on the page (`document.querySelector('main')?.innerText`) or the path starts with `/login`.
 2. If the path starts with `/login`, stop and ask the user to sign in in that browser, then continue when they say they have. Never type credentials, and never fill or submit the sign in form.
 3. Read the page and decide what to point at from what is actually there. Write the bubble text for this user: name their numbers, their questionnaires, their people. Two or three sentences.
-4. Inject `scripts/evident-guide.js` with the JavaScript tool, then call:
+4. Inject `scripts/evident-guide.js` (in this skill's folder) with the JavaScript tool, then call:
 
    ```js
    evidentGuide.show({

@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "evident": { "type": "http", "url": "https://mcp.evident.security/mcp" }
+  }
+}
