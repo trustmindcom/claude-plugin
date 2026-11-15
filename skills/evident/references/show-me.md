@@ -7,13 +7,16 @@ The app is at `https://app.evident.security`. Pages to point at:
 | What | Path | `guide` ids | `match` text if the id is missing |
 | --- | --- | --- | --- |
 | Approvals | `/dashboard/organization/workflow/` | `settings-approvals-download`, `settings-approvals-reuse` | "Approve before download", "Approve before saving for reuse" |
-| Products | `/dashboard/organization/products/` | `settings-products` | "Products" |
+| Products | `/dashboard/organization/` | `settings-products` | "Products" |
 | Answer style | `/dashboard/organization/answer-style/` | `settings-answer-style` | "Answer style" |
-| People | `/dashboard/organization/people/` | `settings-members` | "Members" |
-| Questionnaires | `/dashboard/answer-questions/` | `nav-questionnaires`, `upload-questionnaire` | "Questionnaires" |
-| Knowledge | `/dashboard/manage-data/` | `nav-knowledge`, `upload-document` | "Knowledge Base" |
+| People | `/dashboard/organization/people/` | `settings-members`, `settings-teams` | "Members" |
+| Integrations | `/dashboard/organization/integrations/` | `connect-integration` (one per integration) | "Integrations" |
+| Questionnaires | `/dashboard/answer-questions/` | `upload-questionnaire` | "Questionnaires" |
+| One questionnaire | `/dashboard/answer-questions/detail?id=<id>` | `sheet-toggle`, `question-assign`, `question-approve`, `question-sources`, `inferred-answer-accept` (per row; the first match is the first row) | |
+| Knowledge | `/dashboard/manage-data/` | `upload-document` | "Knowledge Base" |
+| Conflicts | `/dashboard/manage-data/conflicts/` | `conflict-resolve` (the two sides; choosing a side resolves it) | "Conflicts" |
 
-Other ids the app may have: `nav-conflicts`, `nav-trust-center`, `nav-settings`, `connect-integration`, `settings-teams`, `question-assign`, `question-approve`, `question-sources`, `inferred-answer-accept`, `conflict-resolve`, `sheet-toggle`, `chat-open`, `client-switcher`.
+The sidebar, on every page: `nav-questionnaires`, `nav-knowledge`, `nav-conflicts`, `nav-trust-center`, `nav-settings`, `chat-open`, and `client-switcher` when the organization can switch clients.
 
 1. Open the page. Pages render client side; poll until either the text you expect is on the page (`document.querySelector('main')?.innerText`) or the path starts with `/login`.
 2. If the path starts with `/login`, stop and ask the user to sign in in that browser, then continue when they say they have. Never type credentials, and never fill or submit the sign in form.
