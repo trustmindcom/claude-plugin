@@ -15,7 +15,7 @@ The app is at `https://app.evident.security`. Pages to point at:
 
 Other ids the app may have: `nav-conflicts`, `nav-trust-center`, `nav-settings`, `connect-integration`, `settings-teams`, `question-assign`, `question-approve`, `question-sources`, `inferred-answer-accept`, `conflict-resolve`, `sheet-toggle`, `chat-open`, `client-switcher`.
 
-1. Open the page. Pages render client side; wait until the text you expect is on the page before doing anything else (poll `document.querySelector('main')?.innerText`).
+1. Open the page. Pages render client side; poll until either the text you expect is on the page (`document.querySelector('main')?.innerText`) or the path starts with `/login`.
 2. If the path starts with `/login`, stop and ask the user to sign in in that browser, then continue when they say they have. Never type credentials, and never fill or submit the sign in form.
 3. Read the page and decide what to point at from what is actually there. Write the bubble text for this user: name their numbers, their questionnaires, their people. Two or three sentences.
 4. Inject `scripts/evident-guide.js` with the JavaScript tool, then call:
@@ -32,9 +32,9 @@ Other ids the app may have: `nav-conflicts`, `nav-trust-center`, `nav-settings`,
    })
    ```
 
-   It returns `{ ok: true }`, or `{ ok: false, reason }`. On `"not ready"` the page is still loading: wait a second and call again. On `"target not found"`, point at something else on the page or explain in chat.
+   It returns `{ ok: true }`, or `{ ok: false, reason }`. On `"not ready"` the page is still loading: wait a second and call again. After five tries, call once more with `force: true`. On `"target not found"`, point at something else on the page or explain in chat.
 5. Poll `evidentGuide.answer()` to learn which button they pressed, or wait for them to reply in chat. Then show the next thing, do what they chose, or `evidentGuide.clear()`.
-6. Navigation reloads the page and removes the guide; inject again on the next page.
+6. Opening a new URL reloads the page and removes the guide; inject again on the next page. After the user clicks a link inside the app, the guide stays loaded: call `evidentGuide.clear()`, wait for the new page as in step 1, then show the next bubble.
 
 Rules:
 - One bubble at a time. Hand control back after three or four.

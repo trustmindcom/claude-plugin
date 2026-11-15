@@ -2,7 +2,8 @@
 // Usage from Claude:
 //   evidentGuide.show({ guide: "settings-approvals-download", match: "Approve before download", text: "..." })
 // `guide` is a data-guide id; `match` is visible text, used when the id is not on the page.
-// Returns { ok: true, via } or { ok: false, reason }. "not ready" means call again shortly.
+// Returns { ok: true, via } or { ok: false, reason }. "not ready" means call again shortly;
+// pass force: true to draw anyway when the page never reports ready.
 (() => {
   if (window.evidentGuide) return;
 
@@ -73,7 +74,7 @@
   let lastAnswer = null;
 
   function show(opts) {
-    if (!ready()) return { ok: false, reason: "not ready" };
+    if (!opts.force && !ready()) return { ok: false, reason: "not ready" };
     clear();
     const found = target(opts);
     if (!found) return { ok: false, reason: "target not found" };
