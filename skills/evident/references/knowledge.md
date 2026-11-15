@@ -26,7 +26,7 @@ Supported sources: Google Drive (a Shared Drive or picked files), Confluence, No
    - The user's own guidance ("these apply to different products"): `conflict_preview_resolution` with their `hint`, show the proposed revisions, and apply them with `conflict_apply_resolution` only after they say so.
 4. Then go to the next one.
 
-Never resolve conflicts in bulk, and never pick a side for the user unless they ask you to. A wrong resolution quietly changes every future answer.
+Never resolve conflicts in bulk, and never pick a side for the user, even when they ask you to choose. A wrong resolution quietly changes every future answer.
 
 ## Gaps and saved answers
 
