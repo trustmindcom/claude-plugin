@@ -6,13 +6,11 @@ Usage:
     python3 evals/run.py --models haiku --category should_trigger --no-mcp
     python3 evals/run.py report evals/results/<run>   # rebuild the report from a finished run
 
-Environment (see evals/README.md):
-    EVIDENT_MCP_URL                  the Evident MCP endpoint to test against (a test org, never a customer's)
-    EVIDENT_TOKEN_ADMIN              MCP bearer token per role; a case whose role has no token is skipped
-    EVIDENT_TOKEN_KNOWLEDGE_EDITOR
-    EVIDENT_TOKEN_MEMBER
-    EVIDENT_TOKEN_MEMBER_EMPTY_KB    a member in an organization with an empty knowledge base
+Sign-in to the Evident test org (see evals/README.md): evals/.tokens.json holds the MCP URL, the OAuth client id
+and a refresh token per role; the runner refreshes access tokens as they near their 1-hour expiry and saves the
+rotated refresh tokens back. EVIDENT_MCP_URL and EVIDENT_TOKEN_<ROLE> (a fixed access token) override the file.
 
+Claude runs on your own subscription login: API key variables are removed from every run's environment.
 Standard library only; needs the `claude` CLI on PATH.
 """
 
@@ -31,7 +29,9 @@ import sys
 import tempfile
 import threading
 import time
-from collections import defaultdict
+import urllib.parse
+import urllib.request
+from collections import Counter, defaultdict
 from pathlib import Path
 
 EVALS = Path(__file__).resolve().parent
@@ -45,6 +45,11 @@ ALLOWED_TOOLS = ["Skill", "Read", "Glob", "Grep", "Bash(curl:*)", f"{MCP_PREFIX}
 MCP_CHECKS = {"tools_any", "tools_none", "capability", "run_tool"}
 RUN_TIMEOUT_S = 600
 EXCERPT_CHARS = 700
+TOKEN_FILE = EVALS / ".tokens.json"
+REFRESH_MARGIN_S = 900
+# Runs use the operator's Claude subscription login, never an API key or a proxy.
+API_ENV = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX")
+CHILD_ENV = {k: v for k, v in os.environ.items() if k not in API_ENV}
 
 
 # --- Loading ---------------------------------------------------------------------------------------------------
@@ -59,8 +64,49 @@ def load_cases(path: Path) -> list[dict]:
     return cases
 
 
-def role_token(role: str) -> str | None:
-    return os.environ.get(f"EVIDENT_TOKEN_{role.upper()}") or None
+class Tokens:
+    """MCP access tokens per role, refreshed from the token file before they expire."""
+
+    def __init__(self, path: Path):
+        self.path = path
+        self.data = json.loads(path.read_text()) if path.exists() else {}
+        self.mcp_url = os.environ.get("EVIDENT_MCP_URL") or self.data.get("mcp_url")
+        self.lock = threading.Lock()
+
+    def has(self, role: str) -> bool:
+        return bool(os.environ.get(f"EVIDENT_TOKEN_{role.upper()}") or self.data.get("roles", {}).get(role))
+
+    def get(self, role: str) -> str | None:
+        fixed = os.environ.get(f"EVIDENT_TOKEN_{role.upper()}")
+        if fixed:
+            return fixed
+        with self.lock:
+            entry = self.data.get("roles", {}).get(role)
+            if not entry:
+                return None
+            if entry.get("access_token") and entry.get("expires_at", 0) - time.time() > REFRESH_MARGIN_S:
+                return entry["access_token"]
+            body = urllib.parse.urlencode({
+                "grant_type": "refresh_token", "refresh_token": entry["refresh_token"], "client_id": self.data["client_id"],
+            }).encode()  # fmt: skip
+            request = urllib.request.Request(f"{self.mcp_url.rstrip('/')}/token", data=body, method="POST")
+            with urllib.request.urlopen(request, timeout=30) as response:
+                fresh = json.loads(response.read())
+            entry.update(
+                access_token=fresh["access_token"],
+                refresh_token=fresh.get("refresh_token", entry["refresh_token"]),
+                expires_at=time.time() + int(fresh.get("expires_in", 3600)),
+            )
+            self.save()
+            return entry["access_token"]
+
+    def save(self) -> None:
+        """Write atomically, owner-only: the server rotates refresh tokens, so losing a write loses the sign-in."""
+        tmp = self.path.with_suffix(".tmp")
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as fh:
+            json.dump(self.data, fh, indent=2)
+        os.replace(tmp, self.path)
 
 
 def plan_runs(cases: list[dict], models: list[str], repeats: int) -> list[tuple[dict, str, int]]:
@@ -108,7 +154,7 @@ def run_claude(case: dict, model: str, mcp_url: str | None, token: str | None) -
             cmd += ["--mcp-config", str(config)]
         started = time.monotonic()
         try:
-            proc = subprocess.run(cmd, cwd=work, capture_output=True, text=True, timeout=RUN_TIMEOUT_S)
+            proc = subprocess.run(cmd, cwd=work, env=CHILD_ENV, capture_output=True, text=True, timeout=RUN_TIMEOUT_S)
             stdout, error = proc.stdout, (proc.stderr.strip()[-500:] if proc.returncode else "")
         except subprocess.TimeoutExpired as exc:
             raw = exc.stdout or b""
@@ -123,7 +169,8 @@ def run_claude(case: dict, model: str, mcp_url: str | None, token: str | None) -
 def parse_stream(stdout: str) -> dict:
     calls: list[dict] = []
     by_id: dict[str, dict] = {}
-    trace: dict = {"calls": calls, "final_text": "", "cost_usd": None, "turns": None, "error": None, "mcp_status": None}
+    trace: dict = {"calls": calls, "final_text": "", "cost_usd": None, "turns": None, "error": None, "mcp_status": None,
+                   "api_key_source": None}  # fmt: skip
     for line in stdout.splitlines():
         try:
             event = json.loads(line)
@@ -133,6 +180,7 @@ def parse_stream(stdout: str) -> dict:
         if kind == "system" and event.get("subtype") == "init":
             servers = event.get("mcp_servers") or []
             trace["mcp_status"] = {s.get("name"): s.get("status") for s in servers}
+            trace["api_key_source"] = event.get("apiKeySource")
         elif kind in ("assistant", "user"):
             for block in (event.get("message") or {}).get("content") or []:
                 if not isinstance(block, dict):
@@ -291,7 +339,7 @@ def judge(case: dict, criteria: str, trace: dict, judge_model: str) -> dict:
     cmd = ["claude", "-p", prompt, "--model", judge_model, "--tools", "", "--setting-sources", "project",
            "--strict-mcp-config", "--no-session-persistence", "--output-format", "json"]  # fmt: skip
     try:
-        out = subprocess.run(cmd, capture_output=True, text=True, timeout=180).stdout
+        out = subprocess.run(cmd, env=CHILD_ENV, capture_output=True, text=True, timeout=180).stdout
         text = json.loads(out).get("result", "")
         verdict = json.loads(re.search(r"\{.*\}", text, re.S).group(0))
         return {"check": "judge", "pass": bool(verdict.get("pass")), "detail": str(verdict.get("reason", ""))[:300]}
@@ -299,14 +347,15 @@ def judge(case: dict, criteria: str, trace: dict, judge_model: str) -> dict:
         return {"check": "judge", "pass": None, "detail": f"judge unavailable: {type(exc).__name__}"}
 
 
-def run_one(job, mcp_url: str | None, judge_model: str | None) -> dict:
+def run_one(job, tokens: Tokens | None, judge_model: str | None) -> dict:
     case, model, index = job
-    token = role_token(case["role"]) if mcp_url else None
-    mcp = bool(mcp_url and token)
+    mcp_url = tokens.mcp_url if tokens else None
+    mcp = bool(mcp_url and tokens.has(case["role"]))
     try:
+        token = tokens.get(case["role"]) if mcp else None
         trace = run_claude(case, model, mcp_url, token)
     except Exception as exc:  # one broken run is recorded, never allowed to stop the batch
-        trace = {"calls": [], "final_text": "", "cost_usd": None, "turns": None, "mcp_status": None,
+        trace = {"calls": [], "final_text": "", "cost_usd": None, "turns": None, "mcp_status": None, "api_key_source": None,
                  "duration_s": 0, "error": f"runner: {type(exc).__name__}: {exc}"}  # fmt: skip
     summary = summarize(trace)
     crashed = str(trace["error"] or "").startswith("runner:")
@@ -326,7 +375,8 @@ def run_one(job, mcp_url: str | None, judge_model: str | None) -> dict:
         status = "pass" if decided else "unknown"
     return {
         "id": case["id"], "category": case["category"], "role": case["role"], "model": model, "run": index,
-        "prompt": case["prompt"], "mcp": mcp, "mcp_status": trace["mcp_status"], "status": status,
+        "prompt": case["prompt"], "mcp": mcp, "mcp_status": trace["mcp_status"],
+        "api_key_source": trace["api_key_source"], "status": status,
         **summary, "checks": checks,
         "tool_calls": [{"name": c["name"], "input": c["input"], "result": c["result"][:2000]} for c in trace["calls"]],
         "final_text": trace["final_text"], "cost_usd": trace["cost_usd"], "turns": trace["turns"],
@@ -351,6 +401,8 @@ def write_report(rows: list[dict], out: Path, meta: dict) -> None:
         "# Evident plugin eval report", "",
         f"Run `{meta['run_id']}` · plugin `{meta['plugin_commit']}` · {len(rows)} runs · "
         f"MCP: {'yes' if meta['mcp'] else 'no'} · cost ${sum(r['cost_usd'] or 0 for r in rows):.2f}", "",
+        "Claude login per run (`apiKeySource` from the CLI; `none` means the subscription login): "
+        + ", ".join(f"{k} {v}" for k, v in sorted(Counter(str(r.get("api_key_source")) for r in rows).items())) + ".", "",
         "Pass rate counts runs where every decided check passed. Errors (timeouts, CLI failures) and runs with only "
         "skipped checks are listed separately, not counted as failures.", "",
         "## Pass rate by category and model", "",
@@ -448,19 +500,21 @@ def main() -> None:
     ap.add_argument("--no-judge", action="store_true")
     ap.add_argument("--no-mcp", action="store_true", help="run without the Evident server (trigger and routing only)")
     ap.add_argument("--out", type=Path, help="results directory (default evals/results/<timestamp>)")
+    ap.add_argument("--tokens", type=Path, default=TOKEN_FILE, help="token file (default evals/.tokens.json)")
     ap.add_argument("--report", type=Path, default=EVALS / "report.md")
     args = ap.parse_args()
 
-    mcp_url = None if args.no_mcp else os.environ.get("EVIDENT_MCP_URL")
+    tokens = None if args.no_mcp else Tokens(args.tokens)
+    mcp_url = tokens.mcp_url if tokens else None
     if not args.no_mcp and not mcp_url:
-        raise SystemExit("Set EVIDENT_MCP_URL and the EVIDENT_TOKEN_* variables, or pass --no-mcp (see evals/README.md).")
+        raise SystemExit(f"No MCP URL: create {args.tokens} or set EVIDENT_MCP_URL, or pass --no-mcp (see evals/README.md).")
     cases = load_cases(args.cases)
     if args.category:
         cases = [c for c in cases if c["category"] in args.category]
     if args.id:
         cases = [c for c in cases if any(fnmatch.fnmatch(c["id"], g) for g in args.id)]
     if mcp_url:
-        skipped = sorted({c["role"] for c in cases if not role_token(c["role"])})
+        skipped = sorted({c["role"] for c in cases if not tokens.has(c["role"])})
         if skipped:
             print(f"No token for role(s) {skipped}; their cases run without the Evident server.", file=sys.stderr)
     jobs = plan_runs(cases, [m.strip() for m in args.models.split(",") if m.strip()], args.repeats)
@@ -476,7 +530,7 @@ def main() -> None:
     lock, rows = threading.Lock(), []
     judge_model = None if args.no_judge else args.judge_model
     with futures.ThreadPoolExecutor(max_workers=args.concurrency) as pool, open(out / "runs.jsonl", "w") as sink:
-        pending = [pool.submit(run_one, job, mcp_url, judge_model) for job in jobs]
+        pending = [pool.submit(run_one, job, tokens, judge_model) for job in jobs]
         for n, fut in enumerate(futures.as_completed(pending), 1):
             row = fut.result()
             with lock:
