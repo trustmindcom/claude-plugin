@@ -23,7 +23,18 @@ Run the Evident first run. Load the `evident` skill first. Keep it short and use
    5. Member with an empty knowledge base: say answers will be thin until their team adds documents, and add: "A Knowledge Editor can add this. Ask your admin for the Knowledge Editor role if you need to add documents yourself." Then go to 6.
    6. Otherwise ask: "Do you have a questionnaire or portal to work on, or a question you need answered?"
    Never recommend a setup step that `onboarding_get_state` marks `completed`. If `setup_plan.dismissed` is true, do not offer the setup walkthrough unless they ask. For admins, the setup walkthrough is `references/setup.md`, from the first step that is not completed.
-6. **Show the other steps that apply on one "Also available:" line.** Offer the tour once, only if a browser tool is available and `claude:tour` is not in `tooltips_shown`: "I can also show you around the Evident app on screen. Want a quick look?" Follow `references/tour.md`, and end the tour by pointing out that all of it can be done from here.
-7. **Carry straight on into the step they accept**, reading its reference file first.
+   Record which one you recommended: `{"milestone": "start_recommended", "recommendation": "<id>"}`, with `load_knowledge` for 1, `resolve_conflicts` for 2, `assigned_work` for 3, `review_approve` for 4, and `ask` for 5 and 6.
+6. **Show the other steps that apply on one "Also available:" line.** Offer the tour once, only if a browser tool is available, `claude:tour` is not in `tooltips_shown` and `suggestions_quiet` is false: "I can also show you around the Evident app on screen. Want a quick look?" Follow `references/tour.md`, and end the tour by pointing out that all of it can be done from here.
+7. **End with two or three prompts they can copy**, for their role, under "Or try one of these:", each on its own line:
+   - Members: "Do we encrypt customer data at rest?" and "What's assigned to me?"
+   - Knowledge Editors: "Show open conflicts" and "Add our SOC 2 report"
+   - Admins: "Who needs to approve answers?" and "Set up approvals"
+8. **Carry straight on into the step they accept**, reading its reference file first.
 
-After you offer the tour or one of the suggestions listed in `references/moments.md`, call `onboarding_record` (not in your tool list: `capability_run_write` with name `onboarding_record`) with `{"milestone": "tooltip_shown", "tooltip_id": "<its claude: id from that list>"}` (for the tour, `claude:tour`) so it is not offered again. Do not record anything for other offers, such as working through open questions. When the user finishes a setup step with you, record `{"milestone": "step_completed", "step_id": "<id from steps>"}`. Skip these calls if the tools are not available.
+This command is the only place you suggest anything on arrival. Its offers follow the recording rules in `references/moments.md`, all through `onboarding_record` (not in your tool list: `capability_run_write` with name `onboarding_record`):
+
+- After you offer the tour: `{"milestone": "tooltip_shown", "tooltip_id": "claude:tour"}`. When they answer: `suggestion_accepted` or `suggestion_declined` with the same `tooltip_id`.
+- When the user finishes a setup step with you: `{"milestone": "step_completed", "step_id": "<id from steps>"}`.
+- Do not record anything for other offers, such as working through open questions.
+
+Skip these calls if the tools are not available.

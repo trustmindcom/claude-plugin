@@ -2,8 +2,11 @@
 // Usage from Claude:
 //   evidentGuide.show({ guide: "settings-approvals-download", match: "Approve before download", text: "..." })
 // `guide` is a data-guide id; `match` is visible text, used when the id is not on the page.
+// Pass step and steps to number the bubble ("2 of 4"). Every bubble says "Evident is showing this"
+// and has a close button; answer() returns "dismissed" after the user closes it.
 // Returns { ok: true, via } or { ok: false, reason }. "not ready" means call again shortly;
-// pass force: true to draw anyway when the page never reports ready.
+// pass force: true to draw anyway when the page never reports ready. "not evident" means this page
+// is not Evident's own app: the guide never draws over anyone else's site.
 (() => {
   if (window.evidentGuide) return;
 
@@ -19,6 +22,10 @@
     #eg-bubble button { font: inherit; border: 0; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
     #eg-bubble .eg-primary { background: #1a1a1a; color: #fff; }
     #eg-bubble .eg-tag { font-size: 11px; color: #8a6d2b; letter-spacing: .04em; text-transform: uppercase; }
+    #eg-bubble .eg-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    #eg-bubble .eg-head .eg-tag { flex: 1; }
+    #eg-bubble .eg-count { font-size: 11px; color: #6b6b6b; }
+    #eg-bubble .eg-close { background: none; padding: 0 4px; font-size: 16px; line-height: 1; color: #6b6b6b; }
   `;
   document.head.appendChild(style);
 
@@ -53,6 +60,13 @@
     return el ? { el, via: "text" } : null;
   }
 
+  // Evident's own app only: production, dev and a local build. Never a customer's portal or any other site.
+  function onEvident() {
+    const host = location.hostname;
+    return host.endsWith(".evident.security") || host.endsWith(".trustmind.com") ||
+      host === "localhost" || host === "127.0.0.1";
+  }
+
   // The app sets window.evidentGuideReady once the route has loaded its data. Builds without
   // guide hooks never set it, so only wait for it when the page has data-guide hooks.
   function ready() {
@@ -74,6 +88,7 @@
   let lastAnswer = null;
 
   function show(opts) {
+    if (!onEvident()) return { ok: false, reason: "not evident" };
     if (!opts.force && !ready()) return { ok: false, reason: "not ready" };
     clear();
     const found = target(opts);
@@ -94,7 +109,14 @@
     // Text goes in as text: it names the user's own data, which must never run as markup.
     const b = node("div");
     b.id = "eg-bubble";
-    if (opts.tag) b.appendChild(node("div", "eg-tag", opts.tag));
+    const head = node("div", "eg-head");
+    head.appendChild(node("div", "eg-tag", "Evident is showing this"));
+    if (opts.step && opts.steps) head.appendChild(node("span", "eg-count", `${opts.step} of ${opts.steps}`));
+    const close = node("button", "eg-close", "\u00d7");
+    close.setAttribute("aria-label", "Close");
+    close.addEventListener("click", () => { lastAnswer = "dismissed"; clear(); });
+    head.appendChild(close);
+    b.appendChild(head);
     if (opts.title) b.appendChild(node("b", "", opts.title));
     b.appendChild(node("div", "", opts.text));
     const actions = node("div", "eg-actions");
