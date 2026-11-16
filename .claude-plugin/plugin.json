@@ -1,7 +1,7 @@
 {
   "name": "evident",
   "description": "Evident for Claude: answers about your company's security, trust and product from Evident, plus questionnaires, vendor portals, reviews and knowledge, with a skill that can show users around the app.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": {
     "name": "Evident",
     "url": "https://evident.security"
