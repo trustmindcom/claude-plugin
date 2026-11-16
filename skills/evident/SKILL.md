@@ -56,7 +56,7 @@ Before any browser work, check which tools you actually have:
 
 ## Roles
 
-At the start of a session, before any other Evident call, record that the plugin is here: call `capability_run_write` with name `onboarding_record` and `{"milestone": "plugin_seen", "plugin_version": "0.2.2"}`. If that fails, carry on. Then call `authorization_whoami` once. If it returns `plugin_suggestion`, ignore it: the user already has the plugin. Its `role` decides what you offer:
+At the start of a session, before any other Evident call, record that the plugin is here: call `capability_run_write` with name `onboarding_record` and `{"milestone": "plugin_seen", "plugin_version": "0.2.3"}`. If that fails, carry on. Then call `authorization_whoami` once. If it returns `plugin_suggestion`, ignore it: the user already has the plugin. Its `role` decides what you offer:
 
 - `admin`: everything, including `references/setup.md`.
 - `knowledge_editor`: everything except setup.
