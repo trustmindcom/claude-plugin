@@ -1,0 +1,55 @@
+# Every merge to main bumps the plugin's patch version, so Claude picks up the update, and publishes
+# evident-plugin.zip as a GitHub release for org admins who upload the plugin by hand.
+# Pushes made with the workflow token do not start workflows, so the version commit does not loop.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Bump the plugin version
+        id: bump
+        run: |
+          current=$(jq -r .version .claude-plugin/plugin.json)
+          IFS=. read -r major minor patch <<< "$current"
+          next="$major.$minor.$((patch + 1))"
+          jq --arg v "$next" '.version = $v' .claude-plugin/plugin.json > plugin.json.tmp
+          mv plugin.json.tmp .claude-plugin/plugin.json
+          # The skill and /evident:start send the version with plugin_seen; keep them in step.
+          sed -i "s/\"plugin_version\": \"$current\"/\"plugin_version\": \"$next\"/g" skills/evident/SKILL.md commands/start.md
+          echo "version=$next" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and tag the version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Release v${{ steps.bump.outputs.version }}"
+          git tag "v${{ steps.bump.outputs.version }}"
+          git push origin HEAD:main "v${{ steps.bump.outputs.version }}"
+
+      - name: Build evident-plugin.zip
+        run: git archive --format=zip -o evident-plugin.zip HEAD
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.bump.outputs.version }}" evident-plugin.zip \
+            --title "Evident plugin v${{ steps.bump.outputs.version }}" \
+            --notes "Upload evident-plugin.zip under Organization settings > Plugins & skills > Add > Upload a plugin. To update an uploaded plugin, choose Upload new version from its menu." \
+            --latest

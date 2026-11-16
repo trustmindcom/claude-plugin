@@ -4,6 +4,12 @@ Ask Claude about your company's security, privacy, compliance and product ("do w
 
 ## Install
 
+The plugin brings the Evident connector with it, so install the plugin, not just the connector.
+
+**In Claude (web or desktop):** open Customize, then Plugins. Select Add, then Add marketplace, enter `trustmindcom/claude-plugin` and add Evident. Then connect Evident on the plugin's Connectors tab and type `/evident:start`. Org admins can instead add it under Organization settings > Plugins & skills, with Sync from GitHub (updates on every release) or by uploading `evident-plugin.zip` from the [latest release](https://github.com/trustmindcom/claude-plugin/releases/latest); an uploaded zip must be uploaded again to update.
+
+**In Claude Code:**
+
 1. **Install the plugin.** In Claude Code, or a Code session in Claude Desktop, run:
 
    ```
