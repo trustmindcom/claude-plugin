@@ -2,6 +2,8 @@
 
 Ask Claude about your company's security, privacy, compliance and product ("do we encrypt at rest?", "are we SOC 2?") and it answers from your Evident workspace, with the source. Claude can also answer security questionnaires, RFIs and RFPs, fill vendor portals in your own browser, review and approve answers, manage knowledge and conflicts, and show you around the Evident app on screen.
 
+On claude.ai and Claude Desktop, Claude shows its work in Evident's widgets: your open questionnaires, a questionnaire's status, answers to review, conflicts and inferred answers to decide one at a time, your documents and team, and a portal fill's progress. In Claude Code, which shows no widgets, it answers in text.
+
 ## Install
 
 1. **Install the plugin.** In Claude Code, or a Code session in Claude Desktop, run:
@@ -17,7 +19,7 @@ Ask Claude about your company's security, privacy, compliance and product ("do w
 ## What's inside
 
 - `.mcp.json` connects the Evident MCP server at `https://mcp.evident.security/mcp`.
-- `skills/evident` is one skill that Claude uses for any question about your company's own security, trust or product. Its `SKILL.md` holds the rules every task follows and sends Claude to one short file in `references/` for each kind of work: one answer, a questionnaire file, a vendor portal, review, knowledge, setup, the tour of the app (`scripts/evident-guide.js`), and when to suggest a feature.
+- `skills/evident` is one skill that Claude uses for any question about your company's own security, trust or product. Its `SKILL.md` holds the rules every task follows, including which widget to show for each request, and sends Claude to one short file in `references/` for each kind of work: one answer, a questionnaire file, a vendor portal, review, knowledge, setup, the tour of the app (`scripts/evident-guide.js`), and when to suggest a feature.
 - `commands/start.md` is the `/evident:start` first run.
 
 ## What the plugin sends to Evident
