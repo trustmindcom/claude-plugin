@@ -15,12 +15,14 @@ For a security questionnaire, RFI or RFP the user has as a file (Word, Excel, CS
 
 ## Going through all open questionnaires together
 
-When the user works through every open questionnaire at once (a service provider inside one client usually does: "let's do Lattice"), and there is more than one open questionnaire, offer "Go through all N together". If they agree:
+When the user works through every open questionnaire at once (a service provider inside one client usually does: "let's do Lattice"), and there is more than one open questionnaire, offer "Go through all N together". For a service provider, the client's card (`ui_show` with `scope: {"kind": "client", "clientId": "<client id>"}`) shows N. If they agree:
 
-1. Call `questionnaire_open_questions_grouped` (not in your tool list: `capability_search`, then `capability_run_read`; a service provider passes the client's `client_organization_id`). It returns the open questions that need a person, with questions that need the same answer grouped, most urgent questionnaire first.
+1. Call `questionnaire_open_questions_grouped` (not in your tool list: `capability_search`, then `capability_run_read`). A service provider puts the client's id inside `arguments`: `capability_run_read(name="questionnaire_open_questions_grouped", arguments={"client_organization_id": "<client id>"})`; outside `arguments` it is ignored and the read runs in the provider's own organization. It returns the open questions that need a person, with questions that need the same answer grouped, most urgent questionnaire first.
 2. Ask each group once, in order, naming the questionnaires it appears in. Show Evident's draft or sources when there are any (`question_get`, `question_get_sources`).
-3. Write the user's answer to **every** question in the group with `question_write_answers`, one call per question. Pass Evident's own answers through unchanged.
-4. Go on to the next group. When the result says more questions remain, call it again after these.
+3. Write the user's answer to **every** question in the group with `question_write_answers`, one call per question, each with that question's own `questionnaire_id` and `question_id` (and the client's `client_organization_id`). Check each question's answer type with `question_get` first: a choice in one questionnaire can be free text in another. Write the user's answer as they gave it; never copy Evident's draft for one question into another.
+4. Go on to the next group. When the result says more questions remain, call it again after these; skip groups the user already passed on, and stop when nothing new comes back.
+
+When `grouping` is `partial` or `truncated` is true, `groups_count` is not the total: say "at least" or give no total.
 
 Grouping is by meaning; when Evident is unsure two questions match it leaves them apart, so the user may be asked something twice. Never merge groups yourself, and never write one client's answer into another client's questionnaire.
 
