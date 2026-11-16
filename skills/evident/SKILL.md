@@ -110,6 +110,7 @@ When a widget covers the request, show it with `ui_show`, then write only what t
 
 - When the request names a questionnaire, find its id first (`questionnaire_list`). If more than one could fit, ask.
 - One widget per reply. Under it, a line or two: what it shows, then only what it does not (a blocker, the next step). Never write its rows out again as a table or list.
+- When the user asks for a widget's work by name ("settle the conflicts on Honeycomb", "check the inferred answers"), open that widget even when the counts say nothing waits: it says so itself. Do not show a status card instead.
 - A tool reply that starts "Shown to the user in the Evident widget" has already put that widget on screen: do not call `ui_show` for it.
 - A request to change something ("approve Q12", "assign these to Peter") gets no widget: do the change, following "Say first, then wait".
 - **No `ui_show`:** if `ui_show` is not in your tools, even after tool search (Evident leaves it out in Claude Code), answer in text as the reference files say.
