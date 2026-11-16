@@ -22,6 +22,14 @@ For a security questionnaire, RFI or RFP on a portal (OneTrust, Whistic, Service
 7. **Never press Submit**, Complete, Send, or anything that hands the questionnaire in. The user submits.
 8. **Finish** with the steps below.
 
+## A portal that was already run
+
+To go back to a portal questionnaire, to check, finish or resend answers, get its address from Evident; never ask the user to dig the link out of the app.
+
+- `questionnaire_list`, `questionnaire_get` and `questionnaire_summary` return `portal_url` for a portal questionnaire: the page the portal opens on. `questionnaire_get` also returns `portal_page_urls` when its questions sit on several pages.
+- Offer to open `portal_url` in the user's browser, or open it when they ask. The user signs in there; never type credentials.
+- To fill more of it in the user's browser, call `portal_fill_open` with its `questionnaire_id` and follow step 4. In Evident's browser, `portal_sync_answers` sends approved edits back.
+
 ## RFI or RFP
 
 An RFI (request for information) or RFP (request for proposal) is the questionnaire type `vendor_evaluation`; a security questionnaire is the default type.
