@@ -70,7 +70,7 @@ Read the file before acting, and read only the files you need. Each one is short
 | Read this when the user wants | File | Who |
 | --- | --- | --- |
 | One answer: "do we encrypt at rest?", "are we SOC 2?", a line for an email or RFP | `references/answer.md` | Anyone |
-| A questionnaire, RFI or RFP as a file (Word, Excel, CSV, PDF), or assigning its questions | `references/questionnaire.md` | Anyone |
+| A questionnaire, RFI or RFP as a file (Word, Excel, CSV, PDF), assigning its questions, or going through all open questionnaires together ("let's do questionnaires", "let's do Lattice") | `references/questionnaire.md` | Anyone |
 | A questionnaire, RFI or RFP on a customer's vendor portal (OneTrust, Whistic, ServiceNow, a link) | `references/portal.md` | Anyone |
 | Review or approve answers, or "what's waiting on me?" | `references/review.md` | Editors, admins, anyone with a review request |
 | Documents, integrations, conflicts, gaps, saved answers | `references/knowledge.md` | Editors, admins |
@@ -106,10 +106,11 @@ If the user starts doing something by hand in the app, offer once to do it from 
 
 ## Service providers
 
-Some organizations answer questionnaires on behalf of several client companies: `authorization_whoami` returns `is_service_provider`, the `clients` the user may open, and `active_client_id`, the client this session works in. Carry that through everything:
+Some organizations answer questionnaires on behalf of several client companies: `authorization_whoami` returns `is_service_provider` and the `clients` the user may open (each with an `id`). Carry that through everything:
 
 - Talk about "your clients", not "your company". Name the client in every summary.
-- The question decides the scope. "How are we doing" means all clients (`service_provider_get_portfolio_overview`, not in your tool list: call `capability_search`, then `capability_run_read`); a question that names a client, or follows one, means that client. Do the work one client at a time, and say which client you are working in.
+- **Look across clients, work inside one.** "How are we doing" or "let's do questionnaires" without a client means all clients: show the questionnaires widget for all clients (`ui_show` with `scope: {"kind": "all_clients"}`), or `service_provider_get_portfolio_overview` (not in your tool list: call `capability_search`, then `capability_run_read`), and ask which client to work on. Never start answering questions across clients.
+- **Working in a client:** once the user names a client ("let's do Lattice"), pass that client's id as `client_organization_id` on every call that works in it: every read, every answer you write, every approval. A provider with only one client works in it without being asked which. Say which client you are working in.
 - Never use one client's knowledge, answer style or people for another, and never put two clients' data in one answer. If a request is ambiguous about which client, ask.
 - Onboarding for a service provider covers adding clients and giving teammates access per client, before the usual setup.
 

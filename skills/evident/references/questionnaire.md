@@ -13,6 +13,17 @@ For a security questionnaire, RFI or RFP the user has as a file (Word, Excel, CS
 6. **Work the open questions** with the user one at a time (`question_get`, `question_get_sources`), or assign them (below). When the user gives an answer, write it with `question_write_answers`.
 7. **Finish** with the steps below.
 
+## Going through all open questionnaires together
+
+When the user works through every open questionnaire at once (a service provider inside one client usually does: "let's do Lattice"), and there is more than one open questionnaire, offer "Go through all N together". If they agree:
+
+1. Call `questionnaire_open_questions_grouped` (not in your tool list: `capability_search`, then `capability_run_read`; a service provider passes the client's `client_organization_id`). It returns the open questions that need a person, with questions that need the same answer grouped, most urgent questionnaire first.
+2. Ask each group once, in order, naming the questionnaires it appears in. Show Evident's draft or sources when there are any (`question_get`, `question_get_sources`).
+3. Write the user's answer to **every** question in the group with `question_write_answers`, one call per question. Pass Evident's own answers through unchanged.
+4. Go on to the next group. When the result says more questions remain, call it again after these.
+
+Grouping is by meaning; when Evident is unsure two questions match it leaves them apart, so the user may be asked something twice. Never merge groups yourself, and never write one client's answer into another client's questionnaire.
+
 ## RFI or RFP
 
 An RFI (request for information) or RFP (request for proposal) is the questionnaire type `vendor_evaluation`; a security questionnaire is the default type.
