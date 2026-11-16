@@ -8,6 +8,16 @@
 // pass force: true to draw anyway when the page never reports ready. "not evident" means this page
 // is not Evident's own app: the guide never draws over anyone else's site.
 (() => {
+  // Evident's own app only: production, dev and a local build. Never a customer's portal or any other site.
+  // Checked before anything else, so a page that defines its own evidentGuide cannot skip it.
+  const host = location.hostname;
+  const onEvident = host.endsWith(".evident.security") || host.endsWith(".trustmind.com") ||
+    host === "localhost" || host === "127.0.0.1";
+  if (!onEvident) {
+    const refuse = () => ({ ok: false, reason: "not evident" });
+    window.evidentGuide = { show: refuse, clear() {}, answer: () => null, ready: () => false };
+    return;
+  }
   if (window.evidentGuide) return;
 
   const style = document.createElement("style");
@@ -60,13 +70,6 @@
     return el ? { el, via: "text" } : null;
   }
 
-  // Evident's own app only: production, dev and a local build. Never a customer's portal or any other site.
-  function onEvident() {
-    const host = location.hostname;
-    return host.endsWith(".evident.security") || host.endsWith(".trustmind.com") ||
-      host === "localhost" || host === "127.0.0.1";
-  }
-
   // The app sets window.evidentGuideReady once the route has loaded its data. Builds without
   // guide hooks never set it, so only wait for it when the page has data-guide hooks.
   function ready() {
@@ -88,8 +91,8 @@
   let lastAnswer = null;
 
   function show(opts) {
-    if (!onEvident()) return { ok: false, reason: "not evident" };
     if (!opts.force && !ready()) return { ok: false, reason: "not ready" };
+    lastAnswer = null;
     clear();
     const found = target(opts);
     if (!found) return { ok: false, reason: "target not found" };

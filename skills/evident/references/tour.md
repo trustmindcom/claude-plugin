@@ -2,7 +2,7 @@
 
 **Check your model first.** Showing works on any model: it only points at things.
 
-**The tour is pulled, never pushed.** Offer it only when the user asks where something is or how to do something in the app, or when they accept the one offer in `/evident:start`. Never offer it on your own otherwise, and not in quiet mode. Its point is the lesson in `SKILL.md`: here is the app, and you can do all of it from the conversation.
+**The tour is pulled, never pushed.** Offer it only when the user asks where something is or how to do something in the app, or when they accept the one offer in `/evident:start`. Offering it in answer to their question is helping, not a suggestion: do it even in quiet mode or after an earlier decline, and record no offer. Never offer it on your own otherwise. Its point is the lesson in `SKILL.md`: here is the app, and you can do all of it from the conversation.
 
 Use it when a browser tool is present: Claude Desktop's built-in browser (`Claude_Browser__*`) or Claude in Chrome (`claude-in-chrome__*`). Without one, explain in chat and give a direct link on `https://app.evident.security` (paths below). Many pages accept a tab parameter, for example `https://app.evident.security/dashboard/organization/answer-style/?tab=gaps`.
 
@@ -12,7 +12,7 @@ Use it when a browser tool is present: Claude Desktop's built-in browser (`Claud
 - **The user clicks.** Point at the control and say what it does; the user clicks it themselves. Never click, type or change anything in the app during a tour. If they ask you to do it instead, do it from here through Evident's tools, saying first what will change and waiting for a yes.
 - **Re-read the page before every bubble.** Write each bubble from what is on the page now, after the user's click, not from a script. If the page is not what you expected, say so and adapt.
 - **Every bubble shows "Evident is showing this" and a close button.** The script draws both. If the user closes a bubble, the tour is over: clear it and continue in chat.
-- **Only on Evident's own app.** Never inject the script into any other site, such as a customer's portal; the script refuses to draw anywhere but Evident's app.
+- **Only on Evident's own app.** Never inject the script into any other site, such as a customer's portal. As a backstop, the script refuses to draw anywhere but Evident's app.
 - If the page shows the sign-in screen, stop and ask the user to sign in. Never enter credentials.
 
 **Record progress** with `onboarding_record` (`capability_run_write`): `{"milestone": "tour_started"}` when the first bubble shows, then `{"milestone": "tour_step", "step": <n>, "steps": <total>}` for each bubble shown, including the first.

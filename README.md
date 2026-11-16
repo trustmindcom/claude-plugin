@@ -12,7 +12,7 @@ Ask Claude about your company's security, privacy, compliance and product ("do w
 
    On Claude Code older than 2.1.275, run `/plugin marketplace add trustmindcom/claude-plugin` and then `/plugin install evident@evident`.
 2. **Sign in to Evident.** Run `/mcp`, choose `plugin:evident:evident` and sign in in the browser window that opens.
-3. **Start.** Run `/evident:start`. Claude checks who you are, shows what is waiting on you, suggests one next step and offers a short tour of the app.
+3. **Start.** Run `/evident:start`. Claude checks who you are, shows what is waiting on you, suggests one next step, may offer a short on-screen tour of the app, and ends with prompts to try.
 
 ## What's inside
 
@@ -46,7 +46,7 @@ Evident never logs your conversation with Claude, your answers or your documents
 - Write a price, discount or other commercial figure, or accept a contract term.
 - Read, answer or edit a questionnaire file on your computer. It uploads the file to Evident instead.
 - Mix two clients' data, for service providers working for several companies.
-- Change anything without saying first what will change and waiting for your go ahead.
+- Fill a portal or change your knowledge (resolve a conflict, edit a saved answer, change a document's visibility, remove knowledge) without first saying what will change and waiting for your go ahead.
 
 ## Which Claude model
 
@@ -61,7 +61,7 @@ Some work needs a more capable model, and Claude says so before it starts:
 
 Claude suggests a feature rarely: only right after something you did, never one you declined, and never a paid feature you did not ask about. To stop suggestions, tell Claude "stop suggesting". To start them again, tell it "you can suggest things again". The setting is kept in Evident, not in Claude.
 
-The on-screen tour runs only when you ask where something is or how to do it, or accept the one offer in `/evident:start`. It draws only on the Evident app, marks each bubble "Evident is showing this", and you can close it at any time. It never types your password. If the app asks you to sign in, Claude stops and waits for you.
+The on-screen tour runs only when you ask where something is or how to do it, or accept the one offer in `/evident:start`. "Stop suggesting" also stops that offer; if you decline it once, it is not offered again. It draws only on the Evident app, marks each bubble "Evident is showing this", and you can close it at any time. It never types your password. If the app asks you to sign in, Claude stops and waits for you.
 
 ## Uninstall
 

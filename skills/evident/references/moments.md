@@ -11,18 +11,19 @@ Follow "Offering suggestions" in `SKILL.md`: only right after something the user
 3. When the user answers it, record `{"milestone": "suggestion_accepted", "tooltip_id": "<its id>"}` or `{"milestone": "suggestion_declined", "tooltip_id": "<its id>"}`. A decline means never again.
 4. "Stop suggesting" or similar: `{"milestone": "quiet_mode", "quiet": true}`. "You can suggest things again": `quiet: false`.
 
-Ids: `claude:answer-style`, `claude:products`, `claude:slack`, `claude:approvals`, `claude:conflicts`, `claude:portal`, `claude:trust-center`, `claude:tour`. Record only these ids. This list is about offers you make unprompted: when the user asks to be shown something or asks about a feature, always help, whatever was recorded, quiet mode included.
+Ids: `claude:answer-style`, `claude:products`, `claude:slack`, `claude:approvals`, `claude:conflicts`, `claude:portal`, `claude:trust-center`, `claude:tour`. Record only these ids, each for its row in the table. A row marked "none" is part of the task the user is doing, not a suggestion: say it whenever it applies, and record nothing.
 
-| When you notice | Offer | How to check first |
-| --- | --- | --- |
-| The user corrects 3 or more answers the same way (shorter, less technical, no vendor names) | Answer style, or a custom rule in their words. Show the current setting, propose the change, let them confirm. | `answer_preferences_get`* |
-| The user asks for a rule that contradicts a setting | Explain the conflict, offer to change the setting instead. | The write is refused with a conflict |
-| Most documents loaded, no products, and the docs mention more than one product | Ask if they sell more than one product; if yes, product setup. | `product_list`* |
-| Questions keep coming back to the same expert through the user | Assign them, or connect Slack so the expert answers there. | `question_assign` |
-| The user adds a second or third teammate | The two approval switches and their trade offs. | Workflow settings via `capability_search` |
-| The user just added knowledge and it raised several open conflicts | Why conflicts are how the library stays current with no curation; offer to go through them together. | `conflict_list`* `total` |
-| The user is about to accept an inference | Say it becomes a confirmed source used in future answers. | Callout on the answer |
-| A questionnaire arrives on a vendor portal | Fill it from here in their browser, or in Evident's browser (`references/portal.md`). Never press Submit. | Browser tools present, and your model |
-| An RFI or RFP arrives | Create it as `vendor_evaluation`; leave prices and contract terms to the user. | "RFI or RFP" in `references/questionnaire.md` or `references/portal.md` |
-| The user sends the same documents to buyers again and again | The Trust Center, with access that expires. Only if their plan includes it, or they asked about it. | `trust_center_get_settings` |
-| The user asks where something is in the app, or how to do it there | Offer to show them on screen (`references/tour.md`). | Browser tools present |
+This list is about offers you make unprompted. When the user asks to be shown something, asks where something is or how to do it, or asks about a feature, always help, whatever was recorded, quiet mode included. That includes the on-screen tour (`references/tour.md`).
+
+| When you notice | Offer | Id | How to check first |
+| --- | --- | --- | --- |
+| The user corrects 3 or more answers the same way (shorter, less technical, no vendor names) | Answer style, or a custom rule in their words. Show the current setting, propose the change, let them confirm. | `claude:answer-style` | `answer_preferences_get`* |
+| The user asks for a rule that contradicts a setting | Explain the conflict, offer to change the setting instead. | none | The write is refused with a conflict |
+| Most documents loaded, no products, and the docs mention more than one product | Ask if they sell more than one product; if yes, product setup. | `claude:products` | `product_list`* |
+| Questions keep coming back to the same expert through the user | Assign them, or connect Slack so the expert answers there. | `claude:slack` | `question_assign` |
+| The user adds a second or third teammate | The two approval switches and their trade offs. | `claude:approvals` | Workflow settings via `capability_search` |
+| The user just added knowledge and it raised several open conflicts | Why conflicts are how the library stays current with no curation; offer to go through them together. | `claude:conflicts` | `conflict_list`* `total` |
+| The user is about to accept an inference | Say it becomes a confirmed source used in future answers. | none | Callout on the answer |
+| A questionnaire arrives on a vendor portal | Fill it from here in their browser, or in Evident's browser (`references/portal.md`). Never press Submit. | `claude:portal` | Browser tools present, and your model |
+| An RFI or RFP arrives | Create it as `vendor_evaluation`; leave prices and contract terms to the user. | none | "RFI or RFP" in `references/questionnaire.md` or `references/portal.md` |
+| The user sends the same documents to buyers again and again | The Trust Center, with access that expires. Only if their plan includes it, or they asked about it. | `claude:trust-center` | `trust_center_get_settings` |
