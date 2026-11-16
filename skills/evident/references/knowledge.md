@@ -16,6 +16,8 @@ Supported sources: Google Drive (a Shared Drive or picked files), Confluence, No
 
 ## Conflicts
 
+Conflicts on a questionnaire's answers: open them with `ui_show` `[{"part": "decision", "questionnaireId": "<id>", "kind": "conflict"}]`. It shows one conflict at a time and the user picks the side there, so you never pick one. For conflicts in the knowledge base that are not on a questionnaire, or without `ui_show`:
+
 1. List open ones: `conflict_list` with `status="open"`; `total` is how many. Get one with its options: `conflict_get` with `include=['resolution_options']`. Neither is in your tool list: call `capability_search`, then `capability_run_read`.
 2. Show one conflict at a time: both sides, where each came from, and the options.
 3. Apply only the user's explicit choice:

@@ -10,16 +10,18 @@ Run the Evident first run. Load the `evident` skill first. Keep it short and use
    - `questionnaire_list`.
    - `onboarding_get_state`: the setup plan steps with `completed`, the org's counts (including `kb_stats.total_docs`) and `tooltips_shown`. It is not in your tool list: call `capability_run_read` with name `onboarding_get_state` and `{}`.
    - Editors and admins only: the knowledge base size, from `kb_stats` when `onboarding_get_state` gave it, otherwise `knowledge_base_browse` with `view="flat"`; and the open conflict count, from `conflict_list` with `status="open"` (its `total`). `conflict_list` is not in your tool list: call `capability_run_read` with name `conflict_list` and `{"status": "open"}` in the same round.
+
+   Then show their workspace with `ui_show` (load it with tool search if it is deferred): `[{"part": "questionnaires", "view": "waiting_on_you"}]` when something is assigned to them or waits for their review, otherwise `[{"part": "questionnaires"}]`. This is the first thing they see. If `questionnaire_triage_open_work` replied "Shown to the user in the Evident widget", it is already on screen: do not show it again. Without `ui_show`, say in a line or two what is open and what waits on them.
 3. **State the model rules once, briefly, only if your current model limits anything** (the table in the skill's `SKILL.md`). On Haiku: lookups only, and the Haiku message. On Sonnet: everything except filling a portal in their own browser, which needs Opus; Evident's browser works. On Opus, say nothing about models.
-4. **A two or three line overview for their role**, using their numbers:
+4. **One line under the widget for their role**, using their numbers. Do not repeat what the widget shows. Without the widget, two or three lines:
    - Admins: answer questionnaires and portals from here, keep the knowledge base current, and set Evident up for the team.
    - Knowledge Editors: answer questionnaires and portals, load documents, settle conflicts, approve answers.
    - Members: ask about the company's security and product and get answers with sources, work questionnaires and portals, and answer what is assigned to them.
-5. **Recommend the first step that matches**, in this order:
-   1. Editor or admin with an empty knowledge base: load knowledge (`references/knowledge.md`).
-   2. Editor or admin with open conflicts: resolve them, one at a time.
-   3. Anyone with assigned questions or review requests: work through them.
-   4. Editor or admin with questionnaires waiting for approval: review and approve (`references/review.md`).
+5. **Recommend the first step that matches**, in this order. When they accept, open the widget it names (step 8), not in this first reply:
+   1. Editor or admin with an empty knowledge base: load knowledge (`references/knowledge.md`). Opens `[{"part": "manager", "tab": "documents"}]`.
+   2. Editor or admin with open conflicts: resolve them, one at a time. On a questionnaire, opens `[{"part": "decision", "questionnaireId": "<id>", "kind": "conflict"}]`; otherwise `references/knowledge.md`.
+   3. Anyone with assigned questions or review requests: work through them. Opens `question_review` on the questionnaire that holds them.
+   4. Editor or admin with questionnaires waiting for approval: review and approve (`references/review.md`). Opens `question_review` on that questionnaire.
    5. Member with an empty knowledge base: say answers will be thin until their team adds documents, and add: "A Knowledge Editor can add this. Ask your admin for the Knowledge Editor role if you need to add documents yourself." Then go to 6.
    6. Otherwise ask: "Do you have a questionnaire or portal to work on, or a question you need answered?"
    Never recommend a setup step that `onboarding_get_state` marks `completed`. If `setup_plan.dismissed` is true, do not offer the setup walkthrough unless they ask. For admins, the setup walkthrough is `references/setup.md`, from the first step that is not completed.
@@ -29,7 +31,7 @@ Run the Evident first run. Load the `evident` skill first. Keep it short and use
    - Members: "Do we encrypt customer data at rest?" and "What's assigned to me?"
    - Knowledge Editors: "Show open conflicts" and "Add our SOC 2 report"
    - Admins: "Who needs to approve answers?" and "Set up approvals"
-8. **When they reply, carry straight on into the step they accept**, reading its reference file first.
+8. **When they reply, carry straight on into the step they accept**, reading its reference file first and opening the widget step 5 names for it.
 
 This command is the only place you suggest anything on arrival. Its offers follow the recording rules in `references/moments.md`, all through `onboarding_record` (not in your tool list: `capability_run_write` with name `onboarding_record`):
 

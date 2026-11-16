@@ -9,7 +9,7 @@ For a security questionnaire, RFI or RFP the user has as a file (Word, Excel, CS
    - **RFI or RFP:** pass `questionnaire_kind='vendor_evaluation'`, and follow "RFI or RFP" below.
    - **Products:** when `product_list` says `scope_required_for_questionnaires`, ask the user which products it covers and pass their ids as `product_scope`. `product_list` is not in your tool list: call `capability_search`, then `capability_run_read`.
 4. **Wait for it.** Processing takes a few minutes. Tell the user it is running, and check with `questionnaire_get` or `questionnaire_summary` when they come back or ask.
-5. **Report.** Say how many questions were answered, how many are inferences, and how many are open, with the open ones that block delivery first. Pass Evident's answers through exactly as written; never reword, shorten or merge them.
+5. **Report.** Show its status card with `ui_show` `[{"part": "questionnaires", "questionnaireId": "<id>"}]`, then name what blocks delivery in one line. Without `ui_show`, say how many questions were answered, how many are inferences, and how many are open, with the open ones that block delivery first. Pass Evident's answers through exactly as written; never reword, shorten or merge them.
 6. **Work the open questions** with the user one at a time (`question_get`, `question_get_sources`), or assign them (below). When the user gives an answer, write it with `question_write_answers`.
 7. **Finish** with the steps below.
 
