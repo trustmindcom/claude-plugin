@@ -63,7 +63,7 @@ Some work needs a more capable model, and Claude says so before it starts:
 - Quick questions and lookups work on any model.
 - Anything that changes data, and whole questionnaires, need Sonnet or Opus.
 - Filling a portal in your own browser needs Opus.
-- Evident's own browser can fill a portal from Sonnet.
+- Without browser controls, Claude helps you enable the built-in browser in Desktop Cowork or Claude in Chrome, then resume the same portal questionnaire. Claude never starts a fill in Evident's own browser.
 
 ## Suggestions and the tour
 

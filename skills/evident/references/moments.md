@@ -24,6 +24,6 @@ This list is about offers you make unprompted. When the user asks to be shown so
 | The user adds a second or third teammate | The two approval switches and their trade offs. | `claude:approvals` | Workflow settings via `capability_search` |
 | The user just added knowledge and it raised several open conflicts | Why conflicts are how the library stays current with no curation; offer to go through them together. | `claude:conflicts` | `conflict_list`* `total` |
 | The user is about to accept an inference | Say it becomes a confirmed source used in future answers. | none | Callout on the answer |
-| A questionnaire arrives on a vendor portal | Fill it from here in their browser, or in Evident's browser (`references/portal.md`). Never press Submit. | `claude:portal` | Browser tools present, and your model |
+| A questionnaire arrives on a vendor portal | Fill it in their visible browser (`references/portal.md`); missing controls get setup help first. Never press Submit. | `claude:portal` | Browser tools present, and your model |
 | An RFI or RFP arrives | Create it as `vendor_evaluation`; leave prices and contract terms to the user. | none | "RFI or RFP" in `references/questionnaire.md` or `references/portal.md` |
 | The user sends the same documents to buyers again and again | The Trust Center, with access that expires. Only if their plan includes it, or they asked about it. | `claude:trust-center` | `trust_center_get_settings` |
