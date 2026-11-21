@@ -52,7 +52,7 @@ Evident never logs your conversation with Claude, your answers or your documents
 - Press Submit on a portal. You submit.
 - Pick a side in a knowledge conflict. You choose, one conflict at a time.
 - Write a price, discount or other commercial figure, or accept a contract term.
-- Read, answer or edit a questionnaire file on your computer. It uploads the file to Evident instead.
+- Answer, fill or edit a questionnaire file on your computer. Claude reads it to identify its type, company, due date, products and instructions, then uploads it to Evident for answering.
 - Mix two clients' data, for service providers working for several companies.
 - Fill a portal or change your knowledge (resolve a conflict, edit a saved answer, change a document's visibility, remove knowledge) without first saying what will change and waiting for your go ahead.
 
