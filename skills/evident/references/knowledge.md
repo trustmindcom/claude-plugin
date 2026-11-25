@@ -33,5 +33,5 @@ Never resolve conflicts in bulk, and never pick a side for the user, even when t
 ## Gaps and saved answers
 
 - A gap is something the company confirms it does not do. How a "no" is worded is the Answer style setting (`references/setup.md`, admins).
-- When the user gives an answer worth reusing, say what you will save and wait for a yes, then save it with `knowledge_create_entry`, in the user's words.
+- When the user gives an answer worth reusing, say what you will save and wait for a yes, then save it with `knowledge_answer_create`, in the user's words.
 - Answers people write or edit are saved for reuse; AI drafts are not. With "Approve before saving for reuse" on, nothing is saved until approved.
