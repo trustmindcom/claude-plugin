@@ -17,9 +17,22 @@ For a security questionnaire, RFI or RFP the user has as a file (Word, Excel, CS
    - Leave `style_override` unset to use the organization's answer style, unless the user asks for a different style.
    Do not call `questionnaire_detect_upload`; detection is your local read. Do not send `sender_domain`. Ask only the unresolved type or product question above, never for approval of confident choices. For a recoverable finalization refusal (such as date formatting or a missing choice), correct the rejected field and retry with the same uploaded `task_id`. If the file upload fails, say so and stop; never fall back to answering it yourself.
 4. **Say what was set and why.** After creation succeeds, show the upload card when `ui_show` is available: `{"parts":[{"part":"questionnaires","questionnaireId":"<returned id>","upload":{"type":"<short reason>","company":"<short reason>","due":"<short reason>","products":"<short reason>"}}]}`. Supply all four reason keys, including `products` for a single product or all products; when an optional field is unset, give that reason. Each value is your own short reason, not a server detection result. The whole text reply is one sentence in this order: "Started as <type> (<reason>), for <company> (<reason>), due <date> (<reason>), covering <products> (<reason>)." For example: "Started as a security questionnaire (Yes/No controls), for Acme (cover sheet), due 12 December (instructions), covering Atlas (only configured product)." Use "company unset", "due date unset" or "no configured products" when applicable. Processing takes a few minutes; check with `questionnaire_get` or `questionnaire_summary` when the user comes back or asks. Do not claim it started if the tool refused it.
-5. **Report when processing finishes.** Show its status card with `ui_show` `[{"part": "questionnaires", "questionnaireId": "<id>"}]`, then name what blocks delivery in one line. Without `ui_show`, say how many questions were answered, how many are inferences, and how many are open, with the open ones that block delivery first. Pass Evident's answers through exactly as written; never reword, shorten or merge them.
-6. **Work the open questions** with the user one at a time (`question_get`, `question_get_sources`), or assign them (below). When the user gives an answer, write it with `question_write_answers`.
+5. **Report when processing finishes.** Show its status card with `ui_show` `[{"part": "questionnaires", "questionnaireId": "<id>"}]`, then name what blocks delivery in one line. Without `ui_show`, say how many questions were answered, how many are inferences, and how many are open, with the open ones that block delivery first. Pass Evident's answers through exactly as written; never reword, shorten or merge them. In this first report, add one or two sentences on how the answers stay right: Evident is the record of them, so any answer they want changed goes through you into Evident, and they send the file Evident builds, never an edited copy. Give the reason in a few words ("How Evident thinks" in `SKILL.md`): otherwise Evident never learns the change and the next questionnaire repeats the old answer.
+6. **Work the open questions** with the user one at a time (`question_get`, `question_get_sources`), or assign them (below). When the user gives or changes an answer, write it with `question_write_answers`, in their words, before it goes anywhere else.
 7. **Finish** with the steps below.
+
+## Changing answers after the file is made
+
+The file the user sends is built from Evident's answers, so every change starts in Evident.
+
+- **A change said in chat** ("Q14 should say ..."): write it with `question_write_answers`, in the user's words, then hand over the file again (Finish, step 6). Never edit the downloaded file, not for one word and not under a deadline: the change in Evident takes the same minute, and Evident's next questionnaire gets it right.
+- **A finished copy handed back:** the user edited the file, or exported the final from a portal, and asks you to "update Evident" or "add it to the knowledge base". It is the same questionnaire coming back, not new knowledge: most of its answers are Evident's own. Upload it unchanged once, through the Knowledge Base upload: `knowledge_document_create_upload_url`, PUT the bytes with `upload_headers`, then `knowledge_document_create_from_upload`. Evident recognizes a finished copy of a questionnaire it answered. The answers the user changed become their edits on that questionnaire, and Evident's own answers are not saved as theirs. About a minute later, call `document_get_metadata` with the returned `document_id` (not in your tool list: `capability_search`, then `capability_run_read`); its `upload_note` names the questionnaire it updated and what changed. Tell the user that the questionnaire was updated, and what changed; do not say knowledge was added. Then check the conflicts their changes raised (Finish, step 5). Don't compare the file with Evident row by row yourself, and never upload it as a new questionnaire.
+  - If the note names no questionnaire, or a different one from the one you expected, say so. Ask which answers changed and write them with `question_write_answers`.
+  - Members can't add to the Knowledge Base. Ask which answers they changed and write each with `question_write_answers`, or offer to ask a Knowledge Editor or admin to upload the copy.
+
+## Supporting files
+
+A question that asks for a file takes a document that is already in Evident. The user picks it in the question review widget (`ui_show` `question_review`), or you set it with `question_update_attachment` (not in your tool list: `capability_search`, then the run tool it names). A file that is not in Evident yet goes into the Knowledge Base first (`references/knowledge.md`; members ask a Knowledge Editor), then gets attached. Never attach a file only to the copy you hand over: the bundle carries what Evident has.
 
 ## Correcting what was set
 
@@ -65,9 +78,11 @@ There is one Assign action, `question_assign`. Evident decides what it asks for:
 
 ## Finish: triage, review, approve
 
-Questionnaires and portals end the same way.
+Questionnaires and portals end the same way, except that a portal has no file to hand over.
 
 1. Call `questionnaire_triage_open_work` and say what is still open on this questionnaire and who holds it.
 2. Offer to review the answers together (`references/review.md`).
 3. **Knowledge Editors and admins** can approve. Approve only answers the user has reviewed or asked you to approve, with `question_review_answers` (`action='approve'` and the `question_ids`).
 4. Members: say who can approve (a Knowledge Editor, an admin, or the person assigned to review), and offer to assign the review.
+5. **Check conflicts the work raised.** Evident can't push them to you. Call `conflict_list` with `status="open"` (`capability_search`, then `capability_run_read`). If any are open, show them with `ui_show` `[{"part": "decision", "questionnaireId": "<id>", "kind": "conflict"}]`, or one at a time as in `references/knowledge.md` without `ui_show`.
+6. **Hand over the file.** Call `questionnaire_download_url` with `file="bundle"` (`capability_search`, then `capability_run_read`) and give the user the link: one zip with the filled file and the supporting files to attach. If the reply says supporting files were left out (for example, not shared for sending yet), say why. Never fill or edit a local copy. When answers change later, write them to Evident and download again.
