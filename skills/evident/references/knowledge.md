@@ -8,9 +8,9 @@ For Knowledge Editors and admins. Members never get these steps: when something 
 
 Add only new knowledge: policies, reports, documents and answers a person wrote. A filled-in questionnaire Evident answered, or a finished or exported copy of one, is not new knowledge. Most of its answers are Evident's own, and filed as knowledge they would come back as a person's. When the user hands one back, follow "Changing answers after the file is made" in `references/questionnaire.md`. It goes through the same upload, but it updates that questionnaire, and you report it as that questionnaire's update, never as new knowledge.
 
-1. Call `knowledge_document_create_upload_url` for the file, PUT the bytes to the returned URL, sending `upload_headers`, then call `knowledge_document_create_from_upload`.
+1. Call `knowledge_document_upload_url_create` for the file, PUT the bytes to the returned URL, sending `upload_headers`, then call `knowledge_document_create`.
 2. Report what was added, in a line or two. Then check for new conflicts (`conflict_list`, below) and offer to settle them.
-3. `knowledge_base_browse` shows what is there, by source and folder, or newest first with `view="flat"`. `knowledge_base_remove` removes a source, folder or document: say exactly what will go and get a yes first.
+3. `knowledge_document_list` shows what is there, by source and folder, or newest first with `view="flat"`. `knowledge_document_delete` removes a source, folder or document: say exactly what will go and get a yes first.
 
 ## Integrations
 
@@ -35,5 +35,5 @@ Never resolve conflicts in bulk, and never pick a side for the user, even when t
 ## Gaps and saved answers
 
 - A gap is something the company confirms it does not do. How a "no" is worded is the Answer style setting (`references/setup.md`, admins).
-- When the user gives an answer worth reusing, say what you will save and wait for a yes, then save it with `knowledge_create_entry`, in the user's words.
+- When the user gives an answer worth reusing, say what you will save and wait for a yes, then save it with `knowledge_answer_create`, in the user's words.
 - Answers people write or edit are saved for reuse; AI drafts are not. With "Approve before saving for reuse" on, nothing is saved until approved.
