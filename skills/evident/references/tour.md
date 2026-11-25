@@ -15,7 +15,7 @@ Use it when a browser tool is present: Claude Desktop's built-in browser (`Claud
 - **Only on Evident's own app.** Never inject the script into any other site, such as a customer's portal. As a backstop, the script refuses to draw anywhere but Evident's app.
 - If the page shows the sign-in screen, stop and ask the user to sign in. Never enter credentials.
 
-**Record progress** with `onboarding_record` (`capability_run_write`): `{"milestone": "tour_started"}` when the first bubble shows, then `{"milestone": "tour_step", "step": <n>, "steps": <total>}` for each bubble shown, including the first.
+**Record progress** with `onboarding_state_update` (`capability_run_write`): `{"milestone": "tour_started"}` when the first bubble shows, then `{"milestone": "tour_step", "step": <n>, "steps": <total>}` for each bubble shown, including the first.
 
 The app is at `https://app.evident.security`. Pages to point at:
 
