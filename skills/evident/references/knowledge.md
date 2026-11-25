@@ -7,7 +7,7 @@ For Knowledge Editors and admins. Members never get these steps: when something 
 ## Documents
 
 1. Call `knowledge_document_upload_url_create` for the file, PUT the bytes to the returned URL, sending `upload_headers`, then call `knowledge_document_create`.
-2. Report what was added, in a line or two. Then check for new conflicts (`conflict_list`, below) and offer to settle them.
+2. Report what was added, in a line or two. Then check for new conflicts (`knowledge_conflict_list` (or `conflict_list`), below) and offer to settle them.
 3. `knowledge_document_list` shows what is there, by source and folder, or newest first with `view="flat"`. `knowledge_document_delete` removes a source, folder or document: say exactly what will go and get a yes first.
 
 ## Integrations
@@ -18,14 +18,15 @@ Supported sources: Google Drive (a Shared Drive or picked files), Confluence, No
 
 Conflicts on a questionnaire's answers: open them with `ui_show` `[{"part": "decision", "questionnaireId": "<id>", "kind": "conflict"}]`. It shows one conflict at a time and the user picks the side there, so you never pick one. For conflicts in the knowledge base that are not on a questionnaire, or without `ui_show`:
 
-1. List open ones: `conflict_list` with `status="open"`; `total` is how many. Get one with its options: `conflict_get` with `include=['resolution_options']`. Neither is in your tool list: call `capability_search`, then `capability_run_read`.
+1. List open ones: `knowledge_conflict_list` (or `conflict_list`) with `status="open"`; `total` is how many. Get one with its options: `knowledge_conflict_get` (or `conflict_get`) with `include=['resolution_options']`. Neither is in your tool list: call `capability_search`, then `capability_run_read`.
 2. Show one conflict at a time: both sides, where each came from, and the options.
 3. Apply only the user's explicit choice:
-   - One of Evident's options from `conflict_get`: `conflict_apply_resolution` with its `option_id` and the conflict's `expected_version`.
-   - Keep the new content: `conflict_resolve` with `strategy='keep_new'`.
-   - Keep what was there: `conflict_resolve` with `strategy='keep_existing'`.
-   - Not a real conflict: `conflict_resolve` with `strategy='dismiss'`; leave it for later with `strategy='skip'`.
-   - The user's own guidance ("these apply to different products"): `conflict_preview_resolution` with their `hint`, show the proposed revisions, and apply them with `conflict_apply_resolution` only after they say so.
+   - One of Evident's options from `knowledge_conflict_get` (or `conflict_get`): `knowledge_conflict_resolve` with `strategy='apply'`, its `option_id` and the conflict's `expected_version` (or `conflict_apply_resolution` with the same fields and no `strategy`).
+   - Keep the new content: `knowledge_conflict_resolve` (or `conflict_resolve`) with `strategy='keep_new'`.
+   - Keep what was there: `knowledge_conflict_resolve` (or `conflict_resolve`) with `strategy='keep_existing'`.
+   - Not a real conflict: `knowledge_conflict_resolve` (or `conflict_resolve`) with `strategy='dismiss'`.
+   - Leave it for later: call nothing.
+   - The user's own guidance ("these apply to different products"): `knowledge_conflict_resolution_preview` (or `conflict_preview_resolution`) with their `hint`, show the proposed revisions, and apply them only after they say so: `knowledge_conflict_resolve` with `strategy='apply'` and the preview's `hint`, `revisions`, `resolution_id` and `expected_version` (or `conflict_apply_resolution` with the same fields and no `strategy`).
 4. Then go to the next one.
 
 Never resolve conflicts in bulk, and never pick a side for the user, even when they ask you to choose. A wrong resolution quietly changes every future answer.
