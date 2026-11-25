@@ -12,7 +12,7 @@ Most settings tools below are not in your tool list. For each one, call `capabil
 The owner is whoever runs Evident and usually the questionnaire process. Help them in this order, and stop when they have enough:
 
 1. **Knowledge sources** first (`references/knowledge.md`). Ask where their policies, SOC 2 report and past questionnaires live, and connect those.
-2. **Products, after the documents are in.** Settings > Products (`product_list` to read). Evident reads the documents, works out how to tell the products apart, asks the questions the documents do not answer, then sorts existing knowledge, splitting mixed documents. Do not start this before the documents are loaded; it has nothing to work from.
+2. **Products, after the documents are in.** Settings > Products (`settings_product_list` to read). Evident reads the documents, works out how to tell the products apart, asks the questions the documents do not answer, then sorts existing knowledge, splitting mixed documents. Do not start this before the documents are loaded; it has nothing to work from.
 3. **Approvals, once there is a team.** Two independent switches in Settings > Workflow (`settings_workflow_update`, its `approval_before_download` and `approval_before_saving` fields; `settings_workflow_get` reads them):
    - *Approve before download*: nobody but admins downloads a questionnaire until every answer is approved. Strongest control, most friction.
    - *Approve before saving for reuse*: answers only enter the knowledge base once approved. Protects the library, no download friction.
