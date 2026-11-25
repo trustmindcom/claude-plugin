@@ -6,7 +6,7 @@ For Knowledge Editors and admins. Members never get these steps: when something 
 
 ## Documents
 
-Add only new knowledge: policies, reports, documents and answers a person wrote. A filled-in questionnaire Evident answered, or a finished or exported copy of one, is not new knowledge. Most of its answers are Evident's own, and filed as knowledge they would come back as a person's. When the user hands one back, follow "Changing answers after the file is made" in `references/questionnaire.md`. It goes through the same upload, but it updates that questionnaire, and you report it that way, never as knowledge added.
+Add only new knowledge: policies, reports, documents and answers a person wrote. A filled-in questionnaire Evident answered, or a finished or exported copy of one, is not new knowledge. Most of its answers are Evident's own, and filed as knowledge they would come back as a person's. When the user hands one back, follow "Changing answers after the file is made" in `references/questionnaire.md`. It goes through the same upload, but it updates that questionnaire, and you report it as that questionnaire's update, never as new knowledge.
 
 1. Call `knowledge_document_create_upload_url` for the file, PUT the bytes to the returned URL, sending `upload_headers`, then call `knowledge_document_create_from_upload`.
 2. Report what was added, in a line or two. Then check for new conflicts (`conflict_list`, below) and offer to settle them.
