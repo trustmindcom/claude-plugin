@@ -20,9 +20,9 @@ This list is about offers you make unprompted. When the user asks to be shown so
 | The user corrects 3 or more answers the same way (shorter, less technical, no vendor names) | Answer style, or a custom rule in their words. Show the current setting, propose the change, let them confirm. | `claude:answer-style` | `settings_answer_style_get`* |
 | The user asks for a rule that contradicts a setting | Explain the conflict, offer to change the setting instead. | none | The write is refused with a conflict |
 | Most documents loaded, no products, and the docs mention more than one product | Ask if they sell more than one product; if yes, product setup. | `claude:products` | `settings_product_list`* |
-| Questions keep coming back to the same expert through the user | Assign them, or connect Slack so the expert answers there. | `claude:slack` | `question_assign` |
+| Questions keep coming back to the same expert through the user | Assign them, or connect Slack so the expert answers there. | `claude:slack` | `questionnaires_question_assignee_set` (or `question_assign`) |
 | The user adds a second or third teammate | The two approval switches and their trade offs. | `claude:approvals` | Workflow settings via `capability_search` |
-| The user just added knowledge and it raised several open conflicts | Why conflicts are how the library stays current with no curation; offer to go through them together. | `claude:conflicts` | `conflict_list`* `total` |
+| The user just added knowledge and it raised several open conflicts | Why conflicts are how the library stays current with no curation; offer to go through them together. | `claude:conflicts` | `knowledge_conflict_list` (or `conflict_list`)* `total` |
 | The user is about to accept an inference | Say it becomes a confirmed source used in future answers. | none | Callout on the answer |
 | A questionnaire arrives on a vendor portal | Fill it in their visible browser (`references/portal.md`). Never press Submit. | `claude:portal` | Browser tools present, and your model |
 | An RFI or RFP arrives | Create it as `vendor_evaluation`; leave prices and contract terms to the user. | none | "RFI or RFP" in `references/questionnaire.md` or `references/portal.md` |
