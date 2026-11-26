@@ -4,7 +4,7 @@ description: Get started with Evident in Claude
 
 Run the Evident first run. Load the `evident` skill first. Keep it short and use the user's real data; never a canned demo. Ask, wait, continue: never send all of it as one wall of text.
 
-1. **Check the connection.** First call `capability_run_write` with name `onboarding_state_update` and `{"milestone": "plugin_seen", "plugin_version": "0.2.8"}`; if that one call fails, carry on. Then call `account_get` (or `authorization_whoami`), and ignore any `plugin_suggestion` in it. If it fails, tell the user to connect Evident from the plugin's Connectors tab (in Claude Code, run `/mcp` and sign in to `plugin:evident:evident`), and stop. Its `role` is `admin`, `knowledge_editor` or `member`; treat any custom or unknown role as member.
+1. **Check the connection.** First call `capability_run_write` with name `onboarding_state_update` and `{"milestone": "plugin_seen", "plugin_version": "0.2.9"}`; if that one call fails, carry on. Then call `account_get` (or `authorization_whoami`), and ignore any `plugin_suggestion` in it. If it fails, tell the user to connect Evident from the plugin's Connectors tab (in Claude Code, run `/mcp` and sign in to `plugin:evident:evident`), and stop. Its `role` is `admin`, `knowledge_editor` or `member`; treat any custom or unknown role as member.
 2. **Read their workspace in one parallel round:**
    - `questionnaires_open_work_get` (or `questionnaire_triage_open_work`): open work, what is assigned to them, and review requests.
    - `questionnaires_list` (or `questionnaire_list`).
