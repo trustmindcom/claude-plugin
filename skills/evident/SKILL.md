@@ -147,7 +147,7 @@ If you cannot tell whether the organization is a service provider, treat it as a
 
 ## What you changed
 
-When the user asks what you changed ("what did you change today?") or wants to undo something, call `activity_list_mine` (not in your tool list: `capability_run_read` with name `activity_list_mine`, and `since` when they name a time). It lists their own approvals, answer edits and knowledge changes, newest first. Each entry has an `undo` (`tool`, `arguments` and a `note`) or none.
+When the user asks what you changed ("what did you change today?") or wants to undo something, call `account_activity_list` (or `activity_list_mine`) (not in your tool list: `capability_run_read` with name `account_activity_list` (or `activity_list_mine`), and `since` when they name a time). It lists their own approvals, answer edits and knowledge changes, newest first. Each entry has an `undo` (`tool`, `arguments` and a `note`) or none.
 
 - Show the list in plain words: when, what, and on what.
 - Read each entry's `where`: `claude` means it was made from Claude; `not_recorded` means Evident does not record whether it was made here or in the app, so do not claim you made it.
