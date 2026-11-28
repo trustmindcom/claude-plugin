@@ -22,8 +22,11 @@ The plugin brings the Evident connector with it, so install the plugin, not just
 2. **Sign in to Evident.** Run `/mcp`, choose `plugin:evident:evident` and sign in in the browser window that opens.
 3. **Start.** Run `/evident:start`. Claude checks who you are, shows what is waiting on you, suggests one next step, may offer a short on-screen tour of the app, and ends with prompts to try.
 
+**In ChatGPT (Business, Enterprise and Edu workspaces):** a workspace admin opens Admin Console, selects the workspace and opens Plugins. Then select Add, choose Import marketplace and enter `trustmindcom/claude-plugin`. Set the installation policy, then members connect Evident and mention it in a chat ("@Evident what's waiting on me?"). ChatGPT checks the repo for updates every day. OpenAI marks imported plugins that declare an MCP server **Desktop only**, so this route serves the ChatGPT desktop app. On ChatGPT on the web, add Evident as a custom MCP server at `https://mcp.evident.security/mcp` instead.
+
 ## What's inside
 
+- `.claude-plugin/` holds the Claude manifests. `.agents/plugins/marketplace.json` is the same marketplace in OpenAI's format, for ChatGPT and Codex; both point at this one plugin.
 - `.mcp.json` connects the Evident MCP server at `https://mcp.evident.security/mcp`.
 - `skills/evident` is one skill that Claude uses for any question about your company's own security, trust or product. Its `SKILL.md` holds the rules every task follows, including which widget to show for each request, and sends Claude to one short file in `references/` for each kind of work: one answer, a questionnaire file, a vendor portal, review, knowledge, setup, the tour of the app (`scripts/evident-guide.js`), and when to suggest a feature.
 - `commands/start.md` is the `/evident:start` first run.
