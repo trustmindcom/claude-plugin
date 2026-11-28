@@ -1,0 +1,20 @@
+{
+  "name": "evident",
+  "interface": {
+    "displayName": "Evident"
+  },
+  "plugins": [
+    {
+      "name": "evident",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
