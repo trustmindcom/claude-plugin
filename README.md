@@ -6,23 +6,14 @@ On claude.ai and Claude Desktop, Claude shows its work in Evident's widgets: you
 
 ## Install
 
-The plugin brings the Evident connector with it, so install the plugin, not just the connector.
+The plugin brings the Evident connector with it, so install the plugin, not just the connector. The step-by-step guides are on Evident's site, at https://evident.security/mcp/#setup:
 
-**In Claude (web or desktop):** open Customize, then Plugins. Select Add, then Add marketplace, enter `trustmindcom/claude-plugin` and add Evident. Then connect Evident on the plugin's Connectors tab and type `/evident:start`. Org admins can instead add it under Organization settings > Plugins & skills, with Sync from GitHub (updates on every release) or by uploading `evident-plugin.zip` from the [latest release](https://github.com/trustmindcom/claude-plugin/releases/latest); an uploaded zip must be uploaded again to update.
+- [For yourself, in Claude or Claude Code](https://evident.security/mcp/claude/)
+- [For a Claude Team or Enterprise organization](https://evident.security/mcp/claude-teams/)
+- [For yourself, in ChatGPT](https://evident.security/mcp/chatgpt/)
+- [For a ChatGPT Business, Enterprise or Edu workspace](https://evident.security/mcp/chatgpt-workspace/)
 
-**In Claude Code:**
-
-1. **Install the plugin.** In Claude Code, or a Code session in Claude Desktop, run:
-
-   ```
-   /plugin install evident --marketplace trustmindcom/claude-plugin
-   ```
-
-   On Claude Code older than 2.1.275, run `/plugin marketplace add trustmindcom/claude-plugin` and then `/plugin install evident@evident`.
-2. **Sign in to Evident.** Run `/mcp`, choose `plugin:evident:evident` and sign in in the browser window that opens.
-3. **Start.** Run `/evident:start`. Claude checks who you are, shows what is waiting on you, suggests one next step, may offer a short on-screen tour of the app, and ends with prompts to try.
-
-**In ChatGPT (Business, Enterprise and Edu workspaces):** a workspace admin opens Admin Console, selects the workspace and opens Plugins. Then select Add, choose Import marketplace and enter `trustmindcom/claude-plugin`. Set the installation policy, then members connect Evident and mention it in a chat ("@Evident what's waiting on me?"). ChatGPT checks the repo for updates every day. OpenAI marks imported plugins that declare an MCP server **Desktop only**, so this route serves the ChatGPT desktop app. On ChatGPT on the web, add Evident as a custom MCP server at `https://mcp.evident.security/mcp` instead.
+Once Evident is connected, type `/evident:start` in Claude for a short first run.
 
 ## What's inside
 
